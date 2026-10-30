@@ -103,7 +103,7 @@ Rates come back as strings (e.g. `"13.84"`, `"32.00"`): show them as returned. T
 7. Does any field identify green or renewable products?
 8. What does `AnnualPriceInclusive` include (VAT rate, CCL)?
 9. Which date is the new contract's start date (`ContractRenewalDate`?), and what is `NewContractEndDate` for?
-10. How should we get `DuosTariffId` and `MhhsMigrated` when the lookup doesn't return them?
+10. How should we get `DuosTariffId` and `MhhsMigrated` when the lookup doesn't return them? Your example 9-character top line `040151661` appears to hold the SSC (`0151`) and DUoS tariff ID (`661`): please confirm its layout, and whether a 9-character top line always means the meter is MHHS-migrated.
 11. What thresholds should we use to treat a gas site as large or daily-metered?
 12. Should `FooterMessage`, `FooterNotes` or `ExtraInfo` be shown to customers?
 13. Should `mascaradeuser` be the agent's name, their email, or a fixed value?

@@ -1,39 +1,3 @@
-<!--
-Sync Impact Report
-==================
-Version change: unversioned template → 1.0.0
-Bump rationale: first ratified constitution; every template placeholder replaced with
-project-specific content (initial adoption, so 1.0.0 rather than a bump).
-
-Principles (template slot → title):
-  [PRINCIPLE_1_NAME] → I. Security First (NON-NEGOTIABLE)
-  [PRINCIPLE_2_NAME] → II. Customer-Safe Output (NON-NEGOTIABLE)
-  [PRINCIPLE_3_NAME] → III. Validate Before Calling Out
-  [PRINCIPLE_4_NAME] → IV. On-Brand and Accessible
-  [PRINCIPLE_5_NAME] → V. Auditable
-Added principles (template had five slots; the project defines nine):
-  VI. One Set of Numbers
-  VII. Local First, Azure-Ready
-  VIII. Keep It Simple
-  IX. Compliance Wording Is Managed, Not Hard-Coded
-
-Added sections:
-  - Technology and Operating Constraints (was [SECTION_2_NAME])
-  - Development Workflow and Quality Gates (was [SECTION_3_NAME])
-  - Governance rules (was [GOVERNANCE_RULES])
-Removed sections: none
-
-Dependent files (they read this constitution at runtime; not modified by this command):
-  ✅ .specify/templates/plan-template.md: "Constitution Check" gates come from this file;
-     "Complexity Tracking" is where justified deviations go, as Governance requires.
-  ✅ .specify/templates/spec-template.md: no constitution-specific slots; no change needed.
-  ⚠ .specify/templates/tasks-template.md: marks tests as OPTIONAL. Under Principle VI and the
-     Quality Gates, tests are REQUIRED for the listed areas, so /speckit-tasks must include them
-     (the constitution takes precedence; the template itself is left unchanged).
-  ✅ CLAUDE.md: already defers to this file; its rules are consistent with it.
-
-Deferred TODOs: none.
--->
 # Consultiv Utilities Pricing Tool Constitution
 
 The Consultiv Utilities Pricing Tool is an internal web app. Our sales agents use it to get live
@@ -177,8 +141,11 @@ moving parts is easier to secure, review, hand over and keep running.
 ### IX. Compliance Wording Is Managed, Not Hard-Coded
 
 - Customer-facing regulatory text (the commission disclosure, microbusiness protections, credit
-  check wording, and VAT and CCL notes) MUST come from admin-managed settings. It MUST NOT be
-  hard-coded in code, views or the PDF template.
+  check wording, VAT and CCL notes, and the indicative-price notice) and the web address of our
+  terms and conditions MUST come from admin-managed settings. They MUST NOT be hard-coded in code,
+  views or the PDF template.
+- Every customer PDF MUST state that its prices are indicative and subject to change, and MUST
+  link to our terms and conditions, with the full web address printed so it also works on paper.
 - Admins enter only wording approved by compliance. Only the Admin role may change it, and every
   change MUST be logged with who made it, when, and the old and new text (Principle V).
 - Each generated PDF MUST record which version of each wording it used, so any past quote can
