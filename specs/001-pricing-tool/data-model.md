@@ -19,7 +19,7 @@ with the same migrations for both. `PricingDbContext` lives in `PricingTool/Data
 | Consumption | `int`, whole kWh (POWWR's `Consumption.Amount` is an integer) |
 | JSON snapshots | `nvarchar(max)`, written with `System.Text.Json` |
 | Enums | Stored as strings (`nvarchar(32)`), so reports and SQL queries stay readable |
-| Concurrency | `rowversion` on `Quote`, `ApprovalRequest` and `Supplier` |
+| Concurrency | `rowversion` on `Quote` and `Supplier` |
 | Append-only data | Never updated or deleted through the app. `AppendOnlyGuard` (R19) enforces this; only the retention job deletes. Marked 🔒 below. |
 
 ## Entity map
@@ -31,14 +31,13 @@ StaffMember 1─* Quote (owner) 1─* Site (each with one Meter, owned)
                  ├─* PricingRun 🔒 1─* PricingRunSite 🔒 1─* NoQuoteResult 🔒
                  │        │
                  │        └─* PriceOption 1─* PriceOptionSite 🔒 (*─1 PricingRunSite)
-                 ├─* ApprovalRequest 1─* ApprovalItem
                  ├─* CustomerPdf 🔒 1─* OutlookDraft 🔒
                  ├─* PendingUpload 1─* PendingUploadRow
                  ├─* AuditEntry 🔒
                  └─* ReportingRecord 🔒 1─* ReportingRecordSupplier 🔒
                                         1─1 ReportingOutboxEntry
 
-Supplier 1─* SupplierAlias          UpliftLimit (*─0..1 StaffMember)
+Supplier 1─* SupplierAlias
 SettingVersion 🔒                   EffectiveRate 🔒
 ```
 
@@ -59,7 +58,8 @@ A signed-in person. Created or updated on each sign-in (R2).
 | Email | string(320) | From `preferred_username` or `email` |
 | Phone | string(32)? | From Graph `/me`, cached (see research, Open items) |
 | PhoneCheckedUtc | DateTime? | When Phone was last read |
-| LastRolesSeen | string(64) | For example `Agent,Manager`. Informational, for reports; access always uses the live token |
+| CustomerViewOn | bool | The "Customer view" switch (FR-099). Stays on until the person turns it off |
+| LastRolesSeen | string(64) | For example `Agent,Admin`. Informational, for reports; access always uses the live token |
 | FirstSeenUtc, LastSeenUtc | DateTime | |
 
 Roles are **not** stored for authorisation. They always come from the token.
@@ -84,8 +84,8 @@ One customer, one fuel, one or more sites.
 | ‣ ContactName | string(200) | Required |
 | ‣ ContactEmail | string(320) | Required, valid email |
 | ‣ ContactPhone | string(32) | Required, valid UK number, stored normalised |
-| ‣ DeclaredFewerThan10Employees | bool | Microbusiness declaration (FR-027) |
-| ‣ DeclaredTurnoverOrBalanceUnder2m | bool | Microbusiness declaration |
+| ‣ DeclaredFewerThan10Employees | bool | Microbusiness declaration, the customer's yes/no answer (FR-027). Changes are audited (FR-028) |
+| ‣ DeclaredTurnoverOrBalanceUnder2m | bool | Microbusiness declaration, the customer's yes/no answer |
 | **Contract** (owned) | | FR-024 to FR-026 |
 | ‣ StartDate | DateOnly | Not in the past (UK date) when pricing |
 | ‣ TermsMonths | string(20) | A set from {12, 24, 36, 48, 60}, stored as `12,24`; at least one |
@@ -95,8 +95,8 @@ One customer, one fuel, one or more sites.
 | ‣ SupplierFilterMode | enum `All`/`Include`/`Exclude` | |
 | ‣ SupplierFilterIds | string(400) | Comma-separated Supplier IDs |
 | ‣ NoStandingChargeOnly | bool | FR-026 |
-| ‣ DefaultUnitRateUplift | decimal(18,6) | p/kWh, ≥ 0; prefilled from the fuel default (FR-025) |
-| ‣ DefaultStandingChargeUplift | decimal(18,6) | p/day, ≥ 0 |
+| ‣ DefaultUnitRateUplift | decimal(18,6) | p/kWh, ≥ 0 and ≤ the per-fuel maximum (FR-061); prefilled from the fuel default (FR-025) |
+| ‣ DefaultStandingChargeUplift | decimal(18,6) | p/day, ≥ 0 and ≤ the per-fuel maximum |
 | VatCclTreatment | enum `Standard`/`Qualifying` | Low use is decided per site by the engine (FR-030) |
 | QualifyingPercent | decimal(9,4)? | 0–100; required when Qualifying |
 | IncludeVatCcl | bool | The display switch, saved and used on the PDF (FR-034) |
@@ -121,8 +121,8 @@ Draft ──price──▶ Priced ──generate PDF──▶ Quoted
 - **Priced**: the latest run has results.
 - **Quoted**: at least one PDF has been generated from the latest run.
 
-Re-pricing never deletes earlier runs or PDFs (FR-039, FR-051). Approval state isn't a quote status: it
-is worked out for each option (R13).
+Re-pricing never deletes earlier runs or PDFs (FR-039, FR-051). Uplift limits aren't a quote status.
+They are checked at entry, when pricing, and before each PDF or Outlook draft (R13).
 
 ## Site
 
@@ -202,8 +202,8 @@ override use the quote's default uplifts.
 | QuoteId | int | FK, cascade |
 | SupplierId | int | FK Supplier |
 | TermMonths | int | One of the quote's terms |
-| UnitRateUplift | decimal(18,6) | ≥ 0 |
-| StandingChargeUplift | decimal(18,6) | ≥ 0 |
+| UnitRateUplift | decimal(18,6) | ≥ 0 and ≤ the per-fuel maximum (FR-061) |
+| StandingChargeUplift | decimal(18,6) | ≥ 0 and ≤ the per-fuel maximum |
 
 Unique (QuoteId, SupplierId, TermMonths). Each change writes an AuditEntry with the old and new values.
 
@@ -277,7 +277,9 @@ Everything except the selection fields is append-only.
 | SupplierId | int? | Matched admin supplier |
 | PlanType | string(50)? | As returned |
 | TermMonths | int | |
-| UnitRateUplift, StandingChargeUplift | decimal(18,6) | The uplifts used for this supplier and term (limits and approvals are checked against these) |
+| RequestedUnitRateUplift, RequestedStandingChargeUplift | decimal(18,6) | What the agent asked for, for this supplier and term |
+| UnitRateUplift, StandingChargeUplift | decimal(18,6) | The uplifts actually sent to POWWR, after any supplier cap. They are checked against the current limits before each PDF and Outlook draft (FR-063) |
+| IsCappedAtSupplierMax | bool | True when either applied uplift is lower than requested (FR-062). **Agent-only** |
 | SitesCovered, SitesTotal | int | |
 | IsPartial | bool | SitesCovered < SitesTotal |
 | AnyOutsidePricingWindow | bool | |
@@ -291,8 +293,8 @@ Everything except the selection fields is append-only.
 
 Index: (PricingRunId, SupplierName, TermMonths, PlanType), unique.
 
-**Limit and approval status isn't stored**: it is worked out each time it is read, by `UpliftPolicy`
-(R13).
+**Limits**: `LimitPolicy` (R13) checks the applied uplifts against the limits in force when a PDF or
+Outlook draft is requested. The result isn't stored.
 
 ## PriceOptionSite 🔒
 
@@ -316,42 +318,6 @@ The per-site breakdown of one option.
 | SavingExVatCcl, SavingIncVatCcl | decimal(28,10)? | R11 |
 | CommissionContractTotal, CommissionUpfront, CommissionMonthly | decimal(28,10) | R9 |
 | CrossCheckAnnualCost, CrossCheckDifference | decimal(28,10)? | R7. Logged; never shown to customers |
-
-## ApprovalRequest
-
-| Field | Type | Rules |
-|---|---|---|
-| Id | int | PK |
-| QuoteId | int | FK |
-| PricingRunId | int | The run the agent was looking at |
-| RequestedById | int | FK StaffMember |
-| RequestedUtc | DateTime | |
-| Reason | string(1000) | Required (FR-061) |
-| Status | enum `Pending`/`Approved`/`Declined` | |
-| DecidedById | int? | Must not equal RequestedById (FR-063) |
-| DecidedUtc | DateTime? | |
-| DecisionComment | string(1000)? | Required when Declined (FR-062) |
-| RowVersion | rowversion | Stops two managers deciding at once |
-
-```text
-Pending ──approve (manager ≠ requester)──▶ Approved
-Pending ──decline + comment (manager ≠ requester)──▶ Declined
-```
-
-Approved and Declined are final. Raising an uplift above the approved value needs a **new** request
-(FR-065). Every transition writes an AuditEntry and a reporting record (FR-067).
-
-## ApprovalItem
-
-| Field | Type | Rules |
-|---|---|---|
-| Id | int | PK |
-| ApprovalRequestId | int | FK, cascade |
-| SupplierId | int | |
-| SupplierName | string(100) | Snapshot |
-| TermMonths | int | |
-| UnitRateUplift, StandingChargeUplift | decimal(18,6) | The values approved, or to be approved |
-| LimitUnitRate, LimitStandingCharge | decimal(18,6)? | The requester's limits when they asked, shown to the manager |
 
 ## CustomerPdf 🔒
 
@@ -422,8 +388,8 @@ The admin supplier list (FR-081).
 | SuppliesElectricity, SuppliesGas | bool | |
 | IsActive | bool | Inactive suppliers are left out of QuoteDefinitions |
 | UpfrontPercent | decimal(9,4) | 0–100, the commission payment model (R9). Seeded with 0 |
-| MaxUnitRateUplift | decimal(18,6)? | p/kWh; a hard limit (FR-059, FR-066). Blank means none |
-| MaxStandingChargeUplift | decimal(18,6)? | p/day; a hard limit |
+| MaxUnitRateUpliftElectricity, MaxUnitRateUpliftGas | decimal(18,6)? | p/kWh, a hard limit per fuel (FR-059, FR-060). Blank means no uplift is allowed |
+| MaxStandingChargeUpliftElectricity, MaxStandingChargeUpliftGas | decimal(18,6)? | p/day, a hard limit per fuel. Blank means no uplift is allowed |
 | RowVersion | rowversion | |
 
 ## SupplierAlias
@@ -440,22 +406,6 @@ Maps the meter lookup's identifiers to a supplier (R5, US8-4).
 
 At least one of the three is required. Unique where present.
 
-## UpliftLimit
-
-Maximum uplifts per role or per person, per fuel (FR-058).
-
-| Field | Type | Rules |
-|---|---|---|
-| Id | int | PK |
-| Scope | enum `Role`/`StaffMember` | |
-| RoleName | enum `Agent`/`Manager`? | When Scope is Role |
-| StaffMemberId | int? | When Scope is StaffMember; replaces the person's role limit |
-| Fuel | enum | |
-| MaxUnitRateUplift | decimal(18,6)? | Blank means no limit |
-| MaxStandingChargeUplift | decimal(18,6)? | |
-
-Unique (Scope, RoleName, StaffMemberId, Fuel).
-
 ## SettingVersion 🔒
 
 Versioned scalar and wording settings (R19). The current value is the highest Version for a Key.
@@ -466,7 +416,8 @@ Versioned scalar and wording settings (R19). The current value is the highest Ve
 | Key | string(80) | See the keys below |
 | Version | int | 1, 2, 3… per key |
 | ValueJson | nvarchar(max) | |
-| IsPlaceholder | bool | For wording; true until compliance approves it (FR-050) |
+| IsPlaceholder | bool | For wording; true until compliance approves it (FR-050). Outside Development, no PDF or Outlook draft can use a placeholder |
+| ComplianceApprover | string(200)? | Required when a wording version is saved as approved: the approver's name, given by the admin (FR-082) |
 | CreatedById | int? | Null for seed data |
 | CreatedUtc | DateTime | |
 
@@ -476,12 +427,13 @@ Unique (Key, Version).
 
 | Group | Keys |
 |---|---|
-| Default uplifts | `Uplift.Default.Electricity.UnitRate`, `Uplift.Default.Electricity.StandingCharge`, `Uplift.Default.Gas.UnitRate`, `Uplift.Default.Gas.StandingCharge` |
+| Default uplifts | `Uplift.Default.Electricity.UnitRate`, `Uplift.Default.Electricity.StandingCharge`, `Uplift.Default.Gas.UnitRate`, `Uplift.Default.Gas.StandingCharge`. Each must be ≤ its fuel's maximum |
+| Maximum uplifts, for everyone (FR-058) | `UpliftLimit.Electricity.UnitRate`, `UpliftLimit.Electricity.StandingCharge`, `UpliftLimit.Gas.UnitRate`, `UpliftLimit.Gas.StandingCharge`. Blank means no uplift is allowed (FR-060); seeded with starting values |
 | Commission and payment | `Commission.Basis`, `Payment.Default` |
 | Microbusiness | `Microbusiness.Threshold.Electricity.Kwh` (100000), `Microbusiness.Threshold.Gas.Kwh` (293000) |
 | Large gas sites (blank to start) | `LargeGas.Limit.AnnualQuantityKwh`, `LargeGas.Limit.MeterCapacity`, `LargeGas.Limit.DailyMeteredQuantity` |
 | Retention | `Retention.Years` (6) |
-| Customer wording | `Wording.ValidityStatement` (supports `{PricesFetchedDate}`), `Wording.IndicativeNotice`, `Wording.CreditCheck` (starts as the spec's sentence, still marked placeholder until compliance approves it), `Wording.CommissionDisclosure` (supports the placeholders in R18), `Wording.Microbusiness`, `Wording.VatCclNote`, `Wording.Terms` |
+| Customer wording | `Wording.ValidityStatement` (supports `{PricesFetchedDate}`), `Wording.IndicativeNotice`, `Wording.CreditCheck` (starts as the spec's sentence, still marked placeholder until compliance approves it), `Wording.CommissionDisclosure` (supports the placeholders in R18), `Wording.Microbusiness.CommissionDisclosure`, `Wording.Microbusiness.DisputeResolution`, `Wording.Microbusiness.CoolingOff` (all three required on a microbusiness PDF, FR-047), `Wording.VatCclNote`, `Wording.Terms` |
 | Terms address | `Terms.Url` |
 
 ## EffectiveRate 🔒
@@ -523,11 +475,10 @@ The append-only history of every action (FR-067, FR-079, FR-082, FR-086; Princip
 |---|---|
 | Quote | `QuoteCreated`, `QuoteInputsChanged`, `SiteAdded`, `SiteRemoved`, `SitesUploaded` |
 | Pricing | `PricingRequested`, `PricingReturned`, `PricingFailed`, `FailedSitesRetried` |
-| Uplift and selection | `UpliftChanged`, `OptionsSelected`, `RecommendedChanged` |
-| Approvals | `ApprovalRequested`, `ApprovalApproved`, `ApprovalDeclined` |
+| Uplift and selection | `UpliftChanged`, `OptionsSelected`, `RecommendedChanged`, `MicrobusinessDeclarationChanged` |
 | PDF and Outlook | `PdfGenerated`, `PdfDownloaded`, `OutlookDraftCreated`, `OutlookDraftFailed` |
 | Warnings | `DomesticConfirmed` |
-| Admin | `SettingChanged`, `RateAdded`, `RateDeleted`, `SupplierChanged`, `LimitChanged`, `ReportExported` |
+| Admin | `SettingChanged`, `WordingApproved`, `RateAdded`, `RateDeleted`, `SupplierChanged`, `LimitChanged`, `ReportExported` (with the filters and row count, FR-086) |
 | System | `RetentionRun` |
 
 ## ReportingRecord 🔒
@@ -539,7 +490,7 @@ One quote event (FR-084). The payload format is in
 |---|---|---|
 | Id | Guid | PK; used in the export file name |
 | SchemaVersion | int | 1 |
-| EventType | enum | `QuoteRequested`, `PricesReturned`, `Repriced`, `ApprovalRequested`, `ApprovalDecided`, `PdfGenerated`, `OpenedInOutlook`, `Failed` |
+| EventType | enum | `QuoteRequested`, `PricesReturned`, `Repriced`, `PdfGenerated`, `OpenedInOutlook`, `Failed` |
 | OccurredUtc | DateTime | Indexed |
 | QuoteId | int | Indexed |
 | QuoteReference | string(16) | |
@@ -580,7 +531,9 @@ This table is the one exception to append-only among the reporting tables: the w
 | FR-018 | Half-hourly requires kVA | `QuoteInputValidator` |
 | FR-022 | Registers > 0, or total + split = 100% | `QuoteInputValidator`, `RegisterSplit` |
 | FR-024 | Start date not in the past; at least one term; payment method | `QuoteInputValidator` |
-| FR-025 | Uplifts ≥ 0 | `QuoteInputValidator` |
+| FR-025, FR-061 | Uplifts ≥ 0 and ≤ the per-fuel maximum; either measure over its maximum is an error | `QuoteInputValidator`, `LimitPolicy` |
+| FR-063 | Applied uplifts within the limits in force now, before a PDF or Outlook draft | `PdfEligibility`, `LimitPolicy` |
+| FR-050 | No placeholder wording outside Development, before a PDF or Outlook draft | `PdfEligibility` |
 | FR-029 | Qualifying % between 0 and 100 when Qualifying | `QuoteInputValidator` |
 | FR-043 | MPRN 6–10 digits | `Mprn` |
 | FR-045 | Large gas site flagged and not priced | `LargeGasSiteTest` |

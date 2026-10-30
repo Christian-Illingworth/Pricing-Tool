@@ -29,6 +29,48 @@
 - Q: Should POWWR's free-text supplier notes appear on the customer PDF? → A: No. They are shown to
   the agent on the results only, until compliance has reviewed what suppliers send.
 
+### Session 2026-10-30 (security and compliance review)
+
+From the review of `checklists/security-compliance.md`:
+
+- Q: Who can see and change other agents' quotes? → A: Only Admins see every quote, and only to read.
+  Holding only the Admin role doesn't allow quoting. Only a quote's owner can change it.
+- Q: Should uplift limits differ by role or person, and what happens above them? → A: One set of
+  limits applies to everyone: a maximum per fuel, plus a maximum for each supplier and fuel. Both are
+  hard limits, with no manager approval. An uplift above the per-fuel maximum is refused before
+  pricing. A supplier whose maximum is lower is priced at that maximum and marked as capped. A blank
+  limit allows no uplift. The Manager role and the approval process are removed (FR-058 to FR-067
+  rewritten).
+- Q: What if a limit is lowered after a quote is priced? → A: The current limits are checked again
+  before every PDF and Outlook draft.
+- Q: How soon does removing someone's access take effect? → A: Sessions end after 8 hours, and changes
+  apply from the next sign-in.
+- Q: Can a PDF with placeholder wording reach a customer? → A: No. Outside developers' machines, no PDF
+  or Outlook draft can be made while any wording it uses is a placeholder. An admin marks wording as
+  approved and names the compliance approver.
+- Q: Which parts of the microbusiness wording are required? → A: All three, as separate items: the
+  microbusiness commission disclosure, the dispute resolution scheme, and the cooling-off period.
+- Q: What counts for the microbusiness test, and what does the declaration record? → A: This quote's
+  sites only (recorded as an assumption). The declaration is two yes/no answers, which the agent can
+  untick, with every change recorded.
+- Q: Must the PDF show the commission amount in pounds? → A: Compliance decides. The disclosure wording
+  can use pound placeholders for the recommended option.
+- Q: What does the retention clean-up delete? → A: Everything about the quote, including its history
+  and its reporting files. The settings change log is kept. Downloaded CSVs are outside the tool's
+  reach.
+- Q: What is "estimated commission" on the Reports page? → A: The recommended option's whole-contract
+  commission from each quote's latest PDF.
+- Q: Should anyone be told when reporting exports keep failing? → A: Admins see a notice on the
+  Reports page after an hour.
+- Q: How do we protect agent-only figures when an agent shares their screen? → A: A "Customer view"
+  switch on the results hides them.
+- Q: Which security events are recorded? → A: PDF downloads and report exports go in the audit trail.
+  Sign-ins and refused access go in the app's logs.
+- The same review also wrote down points that were already settled: secrets (FR-096, FR-097), the test
+  sign-in (FR-095), enforcement on every page and action (FR-093), the list of agent-only data
+  (FR-100), PDF document properties (FR-048), and the reporting store and CSV rules (FR-084 to
+  FR-087).
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Quote electricity and compare prices for one site (Priority: P1)
@@ -44,7 +86,7 @@ its own it already replaces looking prices up by hand.
 
 **Independent Test**: sign in as an agent, price a single electricity site from a postcode, and
 check the results, agent-only columns, sorting, filtering, re-pricing and selection, without any
-PDF, Outlook, approval or admin features.
+PDF, Outlook, uplift limit or admin features.
 
 **Acceptance Scenarios**:
 
@@ -75,6 +117,8 @@ PDF, Outlook, approval or admin features.
 10. **Given** results on screen, **When** the agent selects several options and marks one as
     recommended, **Then** the quote is saved with those choices, the time it was priced and POWWR's
     pricebook version.
+11. **Given** results on screen, **When** the agent turns on "Customer view", **Then** base rates,
+    commission, capped markers and supplier notes are hidden until they turn it off.
 
 ---
 
@@ -120,13 +164,14 @@ content, branding, file name and that it contains no agent-only figures.
    the PDF, **Then** an A4 PDF in Consultiv Utilities branding is produced with all the content
    listed in FR-047, the recommended option highlighted, and the file name
    `{CustomerName}_{Electricity|Gas}Quote_{YYYY-MM-DD}.pdf`.
-2. **Given** a generated PDF, **When** its content is checked, **Then** it contains no base rates,
-   uplift amounts or commission figures, except where the approved commission disclosure wording
-   includes them.
+2. **Given** a generated PDF, **When** its content is checked, **Then** it contains no agent-only
+   data (FR-100). The only exception is commission figures that the approved commission disclosure
+   wording includes.
 3. **Given** a microbusiness customer, **When** the PDF is generated, **Then** it includes the
    microbusiness wording; for a customer that is not a microbusiness, it does not.
-4. **Given** the compliance wording has not been approved yet, **When** the PDF is generated,
-   **Then** the placeholder text is visibly marked as a placeholder.
+4. **Given** the compliance wording has not been approved yet, **When** the PDF is generated on a
+   developer's machine, **Then** the placeholder text is visibly marked as a placeholder. Anywhere
+   else, the tool refuses to generate the PDF until the wording is approved (FR-050).
 5. **Given** a generated PDF, **When** it is opened, **Then** it states that the prices are
    indicative and subject to change, and its footer has a clickable link to our terms and conditions
    with the full web address printed.
@@ -167,35 +212,34 @@ in both classic and new Outlook.
 
 ---
 
-### User Story 5 - Uplift limits and manager approval (Priority: P2)
+### User Story 5 - Uplift limits (Priority: P2)
 
-Admins set maximum uplifts. An agent can see prices above their limit, but needs a manager's
-approval before giving those prices to a customer.
+Admins set maximum uplifts that apply to everyone: one pair (unit rate and standing charge) for each
+fuel, and one pair for each supplier and fuel. Both are hard limits. Nobody can price above the
+per-fuel maximum, and a supplier with a lower maximum is priced at its maximum.
 
 **Why this priority**: it protects customers from excessive margins and protects our reputation,
 which matters before quotes go to customers in volume.
 
-**Independent Test**: set a low limit for the Agent role, price above it, request approval, and
-approve and decline it as a manager.
+**Independent Test**: set the electricity maximums and a lower maximum for one supplier, try to price
+above the per-fuel maximum, then price within it and check the capped supplier.
 
 **Acceptance Scenarios**:
 
-1. **Given** an agent prices with an uplift above their limit, **When** the results show, **Then** the
-   affected options are marked as needing approval, and the PDF and "Open in Outlook" are unavailable
-   for them.
-2. **Given** options needing approval, **When** the agent requests approval with a reason, **Then** the
-   request appears on the managers' Approvals page.
-3. **Given** a pending request, **When** a manager approves it with a comment, **Then** the agent sees
-   the outcome in the tool and can generate the PDF.
-4. **Given** a pending request, **When** a manager declines it with a comment, **Then** the agent sees
-   the outcome and the comment, and must lower the uplift to continue.
-5. **Given** an approved request, **When** the agent raises the uplift above the approved value,
-   **Then** a new approval is needed.
-6. **Given** a manager's own quote needs approval, **When** they view the Approvals page, **Then** they
-   cannot approve their own request.
-7. **Given** an uplift above a supplier's maximum, **When** the results show, **Then** the affected
-   options are marked as above the supplier's maximum, cannot be approved by anyone, and can only be
-   offered once the agent lowers the uplift to the maximum or below.
+1. **Given** the electricity unit-rate maximum is 1.5 p/kWh, **When** the agent enters an uplift of 2.0
+   and asks for prices, **Then** the field shows an error naming the maximum, and no price request is
+   sent.
+2. **Given** a supplier's electricity unit-rate maximum is 1.0 p/kWh and the agent's uplift is 1.5,
+   **When** the quote is priced, **Then** that supplier's options are priced at 1.0 and marked, for
+   the agent only, as "capped at supplier maximum (1.0)".
+3. **Given** a supplier with no maximum set, **When** the quote is priced with an uplift, **Then** that
+   supplier's options are priced with no uplift and marked as capped, because a blank limit allows no
+   uplift.
+4. **Given** a quote priced within the limits, **When** an admin lowers a maximum below the quote's
+   uplift and the agent then tries to generate the PDF or open it in Outlook, **Then** the tool says
+   which options are over the current limit and requires a re-price.
+5. **Given** an admin sets the default uplift for a fuel, **When** it is above that fuel's maximum,
+   **Then** the setting is refused.
 
 ---
 
@@ -251,9 +295,15 @@ re-price it, and re-download its PDF.
 5. **Given** a PDF whose prices were fetched on an earlier day, **When** the agent chooses "Open in
    Outlook", **Then** the tool requires a re-price and a new PDF first.
 6. **Given** any quote, **When** it is opened, **Then** its history shows every request, result,
-   uplift, approval, PDF and Outlook draft with who did it and when.
+   uplift, microbusiness declaration change, PDF, PDF download and Outlook draft with who did it and
+   when.
 7. **Given** a quote older than the retention period, **When** the daily clean-up runs, **Then** the
-   quote, its PDFs and its reporting records are deleted.
+   quote, its PDFs, its history and its reporting records (including files in the reporting store)
+   are deleted, and the settings change log is kept.
+8. **Given** an agent, **When** they try to open, change or download a PDF from another agent's quote,
+   even by typing its address, **Then** they are refused and see nothing of it.
+9. **Given** an admin, **When** they open another agent's quote, **Then** they can view it, but can't
+   change it, re-price it, generate a PDF or open it in Outlook.
 
 ---
 
@@ -281,8 +331,11 @@ change.
 4. **Given** the meter lookup returns a supplier name that differs from POWWR's pricing name,
    **When** the admin maps it in the supplier list, **Then** the current supplier is recognised on new
    quotes.
-5. **Given** an agent or manager without the Admin role, **When** they try to open the settings,
-   **Then** they are refused.
+5. **Given** an agent without the Admin role, **When** they try to open the settings, **Then** they
+   are refused.
+6. **Given** an admin enters approved wording, **When** they mark it as approved by compliance,
+   **Then** they must name the approver, and the change log shows the approver, who saved it, and
+   when.
 
 ---
 
@@ -294,8 +347,8 @@ records feed a reporting store that Power BI can read.
 **Why this priority**: important for managing the sales team and commission, but it does not stop
 agents quoting.
 
-**Independent Test**: create, price, approve, generate and open several quotes, then check the
-Reports page totals, filters and CSV export, and the records in the reporting store.
+**Independent Test**: create, price, generate and open several quotes, then check the Reports page
+totals, filters and CSV export, and the records in the reporting store.
 
 **Acceptance Scenarios**:
 
@@ -303,11 +356,13 @@ Reports page totals, filters and CSV export, and the records in the reporting st
    appears with all the details listed in FR-084.
 2. **Given** reporting data, **When** an admin filters by agent, date range, fuel, supplier, region
    and quote type, **Then** the list and totals update, and the admin can export the result to CSV.
-3. **Given** an agent or manager without the Admin role, **When** they try to open reports, **Then**
-   they are refused.
+3. **Given** an agent without the Admin role, **When** they try to open reports, **Then** they are
+   refused.
 4. **Given** the reporting store is unavailable, **When** an agent prices and generates a PDF,
    **Then** the agent is not slowed down or blocked, and the records reach the store once it is
    available again.
+5. **Given** records have been failing to reach the reporting store for over an hour, **When** an
+   admin opens the Reports page, **Then** they see a notice saying how many records are waiting.
 
 ---
 
@@ -339,12 +394,13 @@ Reports page totals, filters and CSV export, and the records in the reporting st
   must re-price before generating the PDF.
 - **Prices fetched on an earlier day:** the prices have expired. A re-price is needed before a new PDF
   or an Outlook draft; stored PDFs can still be downloaded for reference.
-- **Approval given on a later day than pricing:** the approval still covers the uplift values, but the
-  agent must re-price before the PDF because the prices have expired.
-- **Supplier prices change while approval is pending:** the approval still covers the uplift values;
-  the agent re-prices before the PDF, and needs a new approval only if the uplift goes above the
-  approved values.
-- **Uplift above the agent's, role's or supplier's limit:** see User Story 5 and FR-058 to FR-066.
+- **Uplift above a limit:** above the per-fuel maximum, the field shows an error and nothing is
+  priced. Above a supplier's maximum, that supplier is priced at its maximum and marked as capped
+  (User Story 5, FR-058 to FR-063).
+- **A limit is lowered after pricing:** options now above it can't go into a new PDF or Outlook draft
+  until the quote is re-priced (FR-063).
+- **A signed-in person loses access:** their session ends within 8 hours, and the change applies from
+  their next sign-in (FR-094).
 - **Consumption exactly on a threshold:** low use applies at exactly 33 kWh a day of electricity or
   145 kWh a day of gas; a microbusiness is flagged at exactly 100,000 kWh of electricity or
   293,000 kWh of gas (FR-027).
@@ -354,7 +410,9 @@ Reports page totals, filters and CSV export, and the records in the reporting st
 - **Outlook not available to open the draft:** a clear message; the PDF can still be downloaded.
 - **Customer name with characters not allowed in file names:** those characters are removed or
   replaced in the PDF file name.
-- **Compliance wording not yet approved:** placeholders are visibly marked on the PDF.
+- **Compliance wording not yet approved:** on a developer's machine, placeholders are visibly marked
+  on the PDF. Anywhere else, no PDF or Outlook draft can be made until the wording is approved
+  (FR-050).
 
 ## Requirements *(mandatory)*
 
@@ -362,15 +420,39 @@ Reports page totals, filters and CSV export, and the records in the reporting st
 
 **Access and roles**
 
-- **FR-001**: Only signed-in staff in the approved staff group MUST be able to use the tool. Anyone
-  else MUST see a no-access page and no data.
-- **FR-002**: The tool MUST support three roles. **Agent**: create, price and manage quotes.
-  **Manager**: everything an Agent can do, plus approve or decline uplift requests. **Admin**: manage
-  settings and view reports. A person MAY hold more than one role.
-- **FR-003**: Agents MUST see only their own quotes. Managers and Admins MUST be able to see all
-  quotes.
-- **FR-004**: Base rates and commission MUST be visible to every signed-in role inside the tool, and
-  MUST NOT appear on anything a customer sees (see FR-049).
+- **FR-001**: Only signed-in staff in our Microsoft 365 tenant who belong to the "Pricing Tool Users"
+  group MUST be able to use the tool. Anyone else, including a group member with no role, MUST see a
+  no-access page and no data.
+- **FR-002**: The tool MUST support two roles. **Agent**: create, price and manage their own quotes.
+  **Admin**: manage settings, view reports, and view every quote read-only. The Admin role alone MUST
+  NOT allow creating or pricing quotes; a person who needs both holds both roles.
+- **FR-003**: Agents MUST see only their own quotes. Admins MUST be able to see all quotes, read-only.
+  Only a quote's owner MUST be able to change it, re-price it, generate its PDFs or open them in
+  Outlook.
+- **FR-004**: Base rates and commission MUST be visible inside the tool to the quote's owner and to
+  Admins, unless "Customer view" is on (FR-099). They MUST NOT appear on anything a customer sees (see
+  FR-049 and FR-100).
+- **FR-093**: Roles and quote ownership MUST be enforced on the server for every page and action, not
+  only by hiding navigation or buttons.
+- **FR-094**: A signed-in session MUST end after at most 8 hours. Changes to someone's group
+  membership or roles MUST apply from their next sign-in.
+- **FR-095**: Until IT provides the Microsoft sign-in registration, the tool MAY offer a test sign-in
+  with made-up staff. It MUST work only on developers' machines (the Development environment) and
+  MUST NOT be reachable in any deployed environment.
+
+**Security**
+
+- **FR-096**: The tool's credentials are secrets, handled as Constitution Principle I requires. They
+  are: the POWWR pricing licence code, the Meter Lookup client secret, the Microsoft sign-in client
+  secret, and the access tokens for POWWR and Microsoft Graph. They MUST NOT appear in stored POWWR
+  requests or responses (the licence code is masked), the audit trail, reporting records, logs or
+  error messages.
+- **FR-097**: When POWWR, the meter lookup or Outlook fails, the agent's message MUST say what
+  happened and what they can do, and MUST NOT include credentials, tokens or raw responses. When POWWR
+  or the meter lookup rejects the tool's own credentials, the agent MUST see that pricing (or the
+  meter lookup) is unavailable and that they should tell an admin. The detail goes to the logs only.
+- **FR-098**: PDF downloads and report exports MUST be recorded in the audit trail (FR-079, FR-086).
+  Sign-ins and refused access attempts MUST be recorded in the app's logs.
 
 **Customer and meter**
 
@@ -438,18 +520,22 @@ Reports page totals, filters and CSV export, and the records in the reporting st
   include or exclude specific suppliers.
 - **FR-025**: The tool MUST pre-fill the unit-rate uplift (p/kWh) and standing-charge uplift (p/day)
   with the defaults for the quote's fuel, and the agent MUST be able to change them for each supplier
-  and term. Uplifts MUST NOT be negative.
+  and term. Uplifts MUST NOT be negative or above the per-fuel maximum (FR-061).
 - **FR-026**: A "no standing charge" option MUST show only products with no standing charge.
 
 **Microbusiness and VAT and CCL treatment**
 
 - **FR-027**: The tool MUST flag the customer as a microbusiness when the quote's annual consumption,
   added up across all its sites, is at or below 100,000 kWh of electricity or 293,000 kWh of gas
-  (exactly at the threshold counts), or when the agent confirms the business has fewer than 10 employees and a turnover
-  or balance sheet of no more than €2m. The thresholds MUST be admin settings.
+  (exactly at the threshold counts). It MUST also flag it when the agent records the customer's
+  "yes" to both declaration questions: the business has fewer than 10 employees, and its turnover or
+  balance sheet is no more than €2m. The agent records only these two yes/no answers, not figures. The
+  consumption test uses this quote's sites only (see Assumptions). The thresholds MUST be admin
+  settings.
 - **FR-028**: The microbusiness flag MUST show on the results, MUST be saved with the quote and MUST
   add the microbusiness wording to the PDF. The agent MUST NOT be able to remove a flag that comes
-  from consumption.
+  from consumption. The agent MAY untick the declaration answers, and every change MUST be recorded in
+  the quote's history.
 - **FR-029**: The tool MUST support three VAT and CCL treatments. **Standard**: 20% VAT and CCL
   charged. **Low use**: at or below 33 kWh a day of electricity or 145 kWh a day of gas, worked out per
   site from annual consumption, giving 5% VAT and no CCL. **Charity or other qualifying use**: 5% VAT
@@ -489,6 +575,10 @@ Reports page totals, filters and CSV export, and the records in the reporting st
 - **FR-041**: Each pricing MUST record when it happened and POWWR's pricebook version.
 - **FR-042**: When POWWR returns an error, times out or limits requests, the tool MUST show a clear
   message, keep everything entered and let the agent retry.
+- **FR-099**: The results MUST have a "Customer view" switch, so the agent can share their screen
+  with a customer. While it is on, the results MUST NOT show base rates, commission, capped markers
+  or supplier notes; the tool leaves them out of the page rather than hiding them on screen. It stays
+  on until the agent turns it off.
 
 **Gas**
 
@@ -520,32 +610,52 @@ Reports page totals, filters and CSV export, and the records in the reporting st
   - the saving against current;
   - the assumptions: consumption used, payment method, VAT and CCL treatment, and whether prices
     include VAT and CCL;
-  - the credit check statement ("All prices are subject to supplier credit check and acceptance");
+  - the credit check statement (starting text: "All prices are subject to supplier credit check and
+    acceptance", which, like all wording, needs compliance approval);
   - the commission disclosure;
-  - for microbusinesses, the microbusiness wording (for example the commission disclosure, dispute
-    resolution scheme details such as the Energy Ombudsman, and any cooling-off period);
+  - for microbusinesses, three further wording items, all required: the microbusiness commission
+    disclosure, the dispute resolution scheme (the Energy Ombudsman), and the cooling-off period;
   - the agent's name, email and phone;
   - a footer with our company registration number and a clickable link to our terms and conditions,
     with the full web address printed so it also works on a printed copy.
 - **FR-048**: The file name MUST be `{CustomerName}_{Electricity|Gas}Quote_{YYYY-MM-DD}.pdf`, with
-  characters that are not allowed in file names removed or replaced.
-- **FR-049**: The PDF MUST NOT contain base rates, uplift amounts or commission figures, except where
-  the approved commission disclosure wording includes them. The disclosure wording MAY include named
-  placeholders for an option's commission, which the tool fills in. The PDF MUST NOT contain POWWR's
-  supplier notes (footer messages, extra information or footer notes).
-- **FR-050**: All customer-facing wording MUST come from the admin settings. Until compliance
-  provides the approved wording, the settings MUST hold placeholder text that is visibly marked as a
-  placeholder on the PDF.
+  characters that are not allowed in file names removed or replaced. The PDF's title property MUST be
+  "Consultiv Utilities quote {reference}", and its author, subject and keywords properties MUST be
+  empty. Technical properties that the PDF software adds (creator, producer, dates) are allowed.
+- **FR-049**: The PDF MUST NOT contain any agent-only data (FR-100), including POWWR's supplier notes.
+  The only exception is commission: the approved commission disclosure wording MAY include named
+  placeholders for the recommended option's commission (for the whole contract, per year, upfront and
+  monthly, in pounds to the penny), which the tool fills in. Compliance decides whether the wording
+  uses them; the tool does not require a commission amount on the PDF. Base rates, uplift amounts and
+  annual costs before uplift are never allowed, even in the disclosure.
+- **FR-100**: Agent-only data is:
+  - base rates;
+  - uplift amounts, and whether an uplift was capped at a supplier's maximum;
+  - annual costs before uplift (POWWR's base annual price);
+  - commission: POWWR's figure, our upfront and monthly split, and the commission basis;
+  - supplier notes;
+  - uplift limits;
+  - POWWR's references and pricebook versions;
+  - the annual cost cross-check.
+
+  Customer-facing outputs are the PDF (including its file name and document properties) and the
+  Outlook draft with its attachment.
+- **FR-050**: All customer-facing wording, including the credit check statement, MUST come from the
+  admin settings, and each item needs compliance approval. Until an item is approved, the settings
+  MUST hold placeholder text that is visibly marked as a placeholder on the PDF. Outside developers'
+  machines, the tool MUST NOT generate a PDF or create an Outlook draft while any wording it would use
+  is still a placeholder.
 - **FR-051**: Every PDF MUST be kept with the quote, together with the version of each piece of
-  wording it used. Generating it again MUST create a new PDF and keep the earlier ones.
+  wording it used. Generating it again MUST create a new PDF and keep the earlier ones. Stored PDFs
+  MUST be downloadable only through the tool, by the quote's owner or an Admin.
 - **FR-052**: Prices MUST count as valid only until the end of the day they were fetched (UK time).
   The tool MUST NOT generate a PDF, or create an Outlook draft, from prices fetched on an earlier day;
   it MUST tell the agent the prices have expired and require a re-price. On the same day, before
   generating the PDF, the tool MUST also check whether any selected supplier has published new prices
   since the quote was priced. If so, it MUST tell the agent which suppliers changed and require a
   re-price.
-- **FR-053**: The PDF MUST NOT be generated while any selected option is above a supplier's maximum
-  uplift or needs an approval that has not been given.
+- **FR-053**: The tool MUST NOT generate the PDF, or create an Outlook draft, while any selected
+  option is above a limit in force at that moment (FR-063).
 
 **Open in Outlook**
 
@@ -557,26 +667,28 @@ Reports page totals, filters and CSV export, and the records in the reporting st
 - **FR-057**: Creating the draft MUST be recorded with the quote. If Outlook cannot be reached, the
   agent MUST see a clear message and still be able to download the PDF.
 
-**Uplift limits and approvals**
+**Uplift limits**
 
-- **FR-058**: Admins MUST be able to set maximum unit-rate and standing-charge uplifts per fuel for
-  each role and, optionally, for an individual agent. An individual agent's limit MUST replace their
-  role's limit.
-- **FR-059**: Admins MUST be able to set a maximum unit-rate and standing-charge uplift per supplier.
-- **FR-060**: An agent MUST be able to see prices with uplifts above their limit. Those options MUST
-  be marked as needing approval.
-- **FR-061**: Before generating the PDF or opening it in Outlook for those options, the agent MUST
-  request manager approval with a reason.
-- **FR-062**: Managers MUST see pending requests on an Approvals page and approve or decline them.
-  A comment MUST be required when declining.
-- **FR-063**: A manager MUST NOT be able to approve or decline their own request.
-- **FR-064**: The agent MUST see the outcome and any comment in the tool, on the quote.
-- **FR-065**: An approval MUST cover the specific uplift values approved for each supplier and term.
-  Re-pricing with the same or lower uplifts MUST keep the approval; raising them MUST need a new one.
-- **FR-066**: A supplier's maximum uplift MUST be a hard limit. Options above it MUST be marked as
-  above the supplier's maximum, with the maximum shown, and MUST NOT be approvable by anyone. The
-  agent MUST lower the uplift to the maximum or below before offering those options.
-- **FR-067**: Every request and decision MUST be recorded with who made it and when.
+- **FR-058**: Admins MUST be able to set, for each fuel, a maximum unit-rate uplift (p/kWh) and a
+  maximum standing-charge uplift (p/day) that apply to everyone. There are no limits per role or per
+  person.
+- **FR-059**: Admins MUST be able to set a maximum unit-rate and standing-charge uplift for each
+  supplier and fuel.
+- **FR-060**: Both kinds of limit MUST be hard limits: nobody can approve an uplift above them. A
+  blank limit MUST mean that no uplift above zero is allowed for that measure.
+- **FR-061**: An uplift above the per-fuel maximum MUST be refused with a field error that names the
+  maximum, before any price request is sent. Going over either the unit-rate maximum or the
+  standing-charge maximum on its own is enough.
+- **FR-062**: When an uplift is within the per-fuel maximum but above a supplier's maximum, the tool
+  MUST price that supplier at its maximum. It MUST mark the affected options, for the agent only, as
+  "capped at supplier maximum", showing the maximum.
+- **FR-063**: Before generating a PDF or creating an Outlook draft, the tool MUST check the selected
+  options' uplifts against the limits in force at that moment. Options above a current limit MUST NOT
+  be included until the quote is re-priced. PDFs already generated stay downloadable.
+- **FR-064**: *(Removed in the security and compliance review: there is no manager approval.)*
+- **FR-065**: *(Removed: there is no manager approval.)*
+- **FR-066**: *(Removed: replaced by FR-060 and FR-062.)*
+- **FR-067**: *(Removed: there is no manager approval. Limit changes are logged under FR-082.)*
 
 **Multi-site quotes**
 
@@ -606,16 +718,20 @@ Reports page totals, filters and CSV export, and the records in the reporting st
 - **FR-077**: Reopening a quote MUST show whether any supplier's prices have changed since it was
   priced, using POWWR's price change history.
 - **FR-078**: Every quote MUST have a unique reference number.
-- **FR-079**: Every request, result, uplift, approval, PDF and Outlook draft MUST be kept with who
-  did it and when, and MUST NOT be editable or deletable through the tool.
-- **FR-080**: Quotes, PDFs and reporting records MUST be deleted automatically once they are older
-  than the retention period. The period MUST be an admin setting, initially 6 years.
+- **FR-079**: Every request, result, uplift, microbusiness declaration change, PDF, PDF download and
+  Outlook draft MUST be kept with who did it and when. These records MUST NOT be editable or deletable
+  through the tool, except by the automatic deletion in FR-080.
+- **FR-080**: A quote MUST be deleted automatically once its most recent activity is older than the
+  retention period, together with everything about it: sites, pricing, PDFs, Outlook draft records,
+  its history, and its reporting records, including files already sent to the reporting store. The
+  admin settings change log MUST be kept. CSV files already downloaded are outside the tool's reach
+  and are the downloader's responsibility. The period MUST be an admin setting, initially 6 years.
 
 **Admin settings**
 
 - **FR-081**: Admins MUST be able to manage:
-  - default uplifts per fuel;
-  - maximum uplifts per role, per agent and per supplier;
+  - default uplifts per fuel, which MUST NOT be above that fuel's maximums;
+  - the maximum uplifts for each fuel, which apply to everyone, and for each supplier and fuel;
   - the supplier list: each supplier's name as POWWR's pricing expects it, matched to the names and
     IDs the meter lookup returns, and each supplier's commission payment model;
   - the basis of POWWR's commission figure (per year or whole contract);
@@ -624,18 +740,20 @@ Reports page totals, filters and CSV export, and the records in the reporting st
   - the microbusiness thresholds;
   - the large gas site limits for AQ, meter capacity and daily metered quantity (each optional);
   - the retention period;
-  - all customer-facing wording: validity statement, indicative-price notice, credit check,
-    commission disclosure, microbusiness wording and terms;
+  - all customer-facing wording, each item with its compliance approval: validity statement,
+    indicative-price notice, credit check, commission disclosure, the three microbusiness items
+    (commission disclosure, dispute resolution scheme, cooling-off period), and terms;
   - the web address of our terms and conditions.
 - **FR-082**: Only Admins MUST be able to change settings. Every change MUST be logged with who, when,
-  and the old and new values, and Admins MUST be able to view that log.
+  and the old and new values, and Admins MUST be able to view that log. To mark a wording item as
+  approved by compliance, the admin MUST give the approver's name, and the log MUST record it.
 - **FR-083**: Changing a setting MUST NOT change PDFs that have already been generated.
 
 **Management reporting**
 
 - **FR-084**: Every quote event MUST be recorded for reporting: quote requested, prices returned,
-  re-priced, approval requested, approval decided, PDF generated, opened in Outlook, and failed. Each
-  record MUST include:
+  re-priced, PDF generated, opened in Outlook, and failed. Records MUST NOT include the customer's
+  contact name, email address or phone number. Each record MUST include:
   - who (agent name and email) and when;
   - our quote reference and POWWR's reference;
   - the quote type and out-of-contract flag;
@@ -649,19 +767,27 @@ Reports page totals, filters and CSV export, and the records in the reporting st
   - the start date, terms requested, payment method, uplifts, no-standing-charge choice, and VAT and
     CCL treatment;
   - every price returned: supplier, product, plan type, term, base and uplifted rates, estimated
-    annual cost, POWWR's commission and our upfront and monthly split, and pricebook version;
+    annual cost, POWWR's commission and our upfront and monthly split, the commission basis used,
+    whether the uplift was capped at the supplier's maximum, and pricebook version;
   - every no-quote reason;
   - which options were selected and recommended;
   - whether a PDF was produced and opened in Outlook.
 - **FR-085**: Admins MUST be able to view these records on a Reports page, filter by agent, date
   range, fuel, supplier, region and quote type, see totals (quotes per agent, PDFs produced and opened
   in Outlook, and estimated commission), and export the filtered list to CSV.
-- **FR-086**: Every export MUST be recorded with who made it and when.
-- **FR-087**: The same records MUST be exported to a reporting store that Power BI can read.
+  - **Estimated commission** is the sum, over quotes with a PDF, of the recommended option's
+    whole-contract commission on each quote's latest PDF.
+  - **The CSV** MUST hold the same columns as the Reports table, with no customer contact details.
+    Its cells MUST be written so that spreadsheet programs can't treat them as formulas.
+- **FR-086**: Every export MUST be recorded with who made it, when, the filters used and the number
+  of rows.
+- **FR-087**: The same records MUST be exported to a reporting store that Power BI can read. Access
+  to the reporting store MUST be limited to Admins and the Power BI service that reads it.
 - **FR-088**: Reporting data includes commission and customer details, so only Admins MUST be able
   to see it.
 - **FR-089**: Recording and exporting MUST NOT slow down or block an agent. Failed exports MUST be
-  retried until they succeed.
+  retried until they succeed. If records have been failing to reach the reporting store for more
+  than an hour, Admins MUST see a notice on the Reports page saying how many are waiting.
 
 **Look and accessibility**
 
@@ -686,21 +812,18 @@ Reports page totals, filters and CSV export, and the records in the reporting st
   version, the commission basis used and the results.
 - **Price option**: one supplier product and term from a pricing run. It holds the rates as returned,
   base rates, charges, estimated annual cost, VAT and CCL, saving, commission split, pricing-window
-  flag, notes, and whether it is selected, recommended or needs approval.
+  flag, notes, and whether it is selected, recommended or capped at the supplier's maximum.
 - **No-quote result**: a supplier that could not price a site, with POWWR's reason.
-- **Approval request**: options needing approval, the uplift values, the agent's reason, and the
-  manager's decision and comment.
 - **Customer PDF**: a generated file linked to the quote, the pricing run and the wording versions
   used.
 - **Outlook draft record**: when and by whom a draft was created for a PDF.
 - **Supplier**: the pricing name, lookup names and IDs, commission payment model and maximum
-  uplifts.
+  uplifts for each fuel.
 - **Setting**: a managed value (defaults, limits, rates with effective-from dates, thresholds,
-  wording, terms address) with its change history.
+  wording, terms address) with its change history and, for wording, its compliance approval.
 - **Audit entry**: who did what to which quote or setting, and when.
 - **Reporting record**: one quote event with the details in FR-084.
-- **Staff member**: a signed-in person with one or more roles and, optionally, their own uplift
-  limits.
+- **Staff member**: a signed-in person with the Agent role, the Admin role, or both.
 
 ## Success Criteria *(mandatory)*
 
@@ -710,8 +833,10 @@ Reports page totals, filters and CSV export, and the records in the reporting st
   attached, in under 2 minutes for a single site in 9 out of 10 attempts, when POWWR responds
   normally.
 - **SC-002**: In testing, 100% of invalid MPANs and MPRNs are caught before any price request is sent.
-- **SC-003**: In testing, no customer PDF or Outlook draft contains a base rate, uplift amount or
-  commission figure outside the approved disclosure wording.
+- **SC-003**: In testing, no customer PDF (including its file name and document properties) or
+  Outlook draft contains any agent-only value (FR-100), whether exactly as POWWR returned it, at full
+  precision or rounded to the penny. The only exception is commission figures inside the approved
+  disclosure wording.
 - **SC-004**: For every test quote, every figure on screen, in the PDF and in reporting matches to
   the penny.
 - **SC-005**: When the meter lookup is unavailable, agents can still complete 100% of quotes by
@@ -722,8 +847,9 @@ Reports page totals, filters and CSV export, and the records in the reporting st
   the reporting store within 15 minutes of the store becoming available.
 - **SC-008**: A 50-site spreadsheet can be uploaded, have every invalid row reported, and be priced
   in a single sitting without re-entering any site.
-- **SC-009**: No PDF can be generated or opened in Outlook for an option above a supplier's maximum
-  uplift, or one that needs an approval that has not been given.
+- **SC-009**: No price request is ever sent with an uplift above the per-fuel maximum, no supplier is
+  ever priced above its own maximum, and no PDF or Outlook draft ever includes an option above a limit
+  in force when it is made.
 - **SC-010**: A single-site PDF with up to 6 selected options fits on 1–2 A4 pages.
 - **SC-011**: No new PDF or Outlook draft is ever produced from prices fetched on an earlier day.
 
@@ -750,7 +876,8 @@ Reports page totals, filters and CSV export, and the records in the reporting st
   appears even on small meters, so it cannot identify daily-metered sites on its own. The three limits
   start blank, so nothing is flagged until they are set from POWWR's advice.
 - **Settings before User Story 8:** until the admin settings pages exist, the tool starts with initial
-  values (defaults, limits, VAT and CCL rates, thresholds) and placeholder wording.
+  values (defaults, limits, VAT and CCL rates, thresholds) and placeholder wording. Maximum uplifts are
+  set for every fuel and supplier from the start, because a blank maximum allows no uplift (FR-060).
 - **VAT and CCL detail:** finance confirms how partial qualifying use is treated, for example any
   percentage above which the whole supply qualifies, and the rates and thresholds are set to match.
   The annual cost estimate uses the rates in effect on the contract start date for the first year.
@@ -758,8 +885,11 @@ Reports page totals, filters and CSV export, and the records in the reporting st
 - **Microbusiness boundary:** consumption exactly at 100,000 kWh of electricity or 293,000 kWh of gas
   counts as a microbusiness, following our reading of the regulatory "not more than" definition.
   Open item: compliance to confirm.
-- **Visibility:** agents see only their own quotes; managers and admins see all. A manager's quotes
-  are subject to the Manager role's limits and need another manager's approval.
+- **Visibility:** agents see only their own quotes; admins see all quotes, read-only. Uplift limits
+  are the same for everyone.
+- **Microbusiness scope:** the consumption test adds up only this quote's sites, while the regulatory
+  definition concerns the business's total use. When the agent knows the business is a microbusiness
+  for another reason, they record it through the declaration (FR-027).
 - **Re-pricing:** re-pricing adds a new pricing run to the same quote; earlier runs and PDFs are kept.
 - **Retention:** the 6-year period runs from a quote's most recent activity.
 - **Volume:** multi-site quotes are usually under 50 sites, and single-site quotes usually offer up
@@ -789,7 +919,8 @@ Reports page totals, filters and CSV export, and the records in the reporting st
     (FR-016). Also confirm the 9-digit layout, and that it means the meter is MHHS-migrated.
   - Q11, the large gas site thresholds: three optional admin limits, blank until advised (FR-045).
   - Q12, the content of supplier notes: agent-only until reviewed (FR-049).
-- **Dependencies:** IT provides the sign-in registration with permission to create Outlook drafts;
+- **Dependencies:** IT provides the sign-in registration with the Agent and Admin roles and
+  permission to create Outlook drafts (until then, the test sign-in in FR-095 is used);
   POWWR provides the licence code, Meter Lookup access and answers to the open questions; compliance
   provides the approved wording and terms address; finance provides the VAT and CCL rules, commission
   payment models and uplift limits.

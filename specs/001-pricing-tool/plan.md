@@ -20,8 +20,9 @@ An internal ASP.NET Core Razor Pages app for Consultiv Utilities' sales agents. 
 6. produces a branded A4 PDF quote;
 7. can save it into a blank Outlook draft in their own mailbox.
 
-Managers approve uplifts above an agent's limit. Admins manage settings, wording and limits, and see
-reports.
+Uplifts are capped by hard limits that are the same for everyone: a maximum per fuel, and a maximum for
+each supplier and fuel. There is no manager approval. Admins manage settings, wording and limits, see
+reports, and can view every quote read-only. The roles are Agent and Admin.
 
 **Technical approach**:
 - **Structure**: one web project and one xUnit project, following Triage's conventions.
@@ -61,19 +62,26 @@ in the meantime. None blocks the build.
 
 | # | Principle | How this design complies | Pre-research | Post-design |
 |---|---|---|---|---|
-| I | **Security First** (non-negotiable) | **Secrets**: the licence code, the Meter Lookup client secret and the Entra client secret are only in user secrets, read through `IConfiguration`. Key Vault is added later as a configuration provider. **Tokens**: acquired and cached on the server. **Logs and stored copies**: the stored POWWR request masks `LicenceCode`, and no secret or token is logged, audited or exported (R4, R25). **Access**: every page requires sign-in by fallback policy; the server checks the tenant, the group (`AllowedGroupId`) and an app role, with roles enforced through policies (R2). **Dev sign-in**: works only in the Development environment, startup fails otherwise, and `/Dev/SignIn` returns 404 (automated test). **Other protections**: antiforgery on every POST, security headers and CSP (R24) | ✅ | ✅ |
-| II | **Customer-Safe Output** (non-negotiable) | The PDF is built only from `CustomerQuoteDocumentModel`, which has no agent-only fields ([contracts/customer-pdf.md](contracts/customer-pdf.md)). The Outlook draft carries only the PDF. File names contain only the customer name, fuel and date. Commission appears only through disclosure placeholders. Reflection and rendered-content tests are required (R18) | ✅ | ✅ |
+| I | **Security First** (non-negotiable) | **Secrets**: the licence code, the Meter Lookup client secret and the Entra client secret are only in user secrets, read through `IConfiguration`. Key Vault is added later as a configuration provider. **Tokens**: acquired and cached on the server. **Logs and stored copies**: the stored POWWR request masks `LicenceCode`, and no secret or token is logged, audited or exported (R4, R25). **Access**: every page requires sign-in by fallback policy; the server checks the tenant, the group (`AllowedGroupId`) and an app role, with the Agent and Admin roles and quote ownership enforced through policies on every handler (R2, FR-093). Sessions last at most 8 hours (FR-094). **Dev sign-in**: works only in the Development environment, startup fails otherwise, and `/Dev/SignIn` returns 404 (automated test). **Other protections**: antiforgery on every POST, security headers and CSP (R24). ⚠️ **The constitution names Agent, Manager and Admin roles**; the spec now has Agent and Admin only, so the constitution needs a small amendment (see the gate result) | ✅ | ⚠️ |
+| II | **Customer-Safe Output** (non-negotiable) | The PDF is built only from `CustomerQuoteDocumentModel`, which has no agent-only fields ([contracts/customer-pdf.md](contracts/customer-pdf.md)). The Outlook draft carries only the PDF. File names contain only the customer name, fuel and date, and the PDF title only our name and the reference. Commission appears only through disclosure placeholders. Placeholder wording can't reach a customer outside Development. "Customer view" renders the results without agent-only data for screen sharing. Reflection and rendered-content tests are required (R18) | ✅ | ✅ |
 | III | **Validate Before Calling Out** | `QuoteInputValidator` and the MPAN, MPRN and postcode validators run on the server before every POWWR call (pricing, `/prompts`, lookup), and again as a guard in the services. Upload rows go through the same rules (R15, R23). POWWR responses are mapped and checked in the adapter (R4, R5) | ✅ | ✅ |
 | IV | **On-Brand and Accessible** | The kit is copied into `wwwroot/cu/` unchanged. `app.css` and `pdf.css` use tokens only, with no hex, `rgb()` or named colours (a test scans the `.css` and `.cshtml`/`.razor` files). Text is navy, and teal only for links and active controls. Savings use marks plus words. Components are listed per screen below, and missing ones are listed as kit gaps rather than restyled. Keyboard and focus ring come from the kit. Layouts are checked at 390, 1024 and 1280 px (quickstart). The older brand guide is ignored | ✅ | ✅ |
-| V | **Auditable** | Inputs and raw POWWR responses (`PricingRunSite`), engine results, uplifts, approvals, PDFs (with wording versions), Outlook drafts and settings changes (with old and new values) are all stored, with the Entra identity and a UTC time. The audit row is written in the same `SaveChanges` as the action, so failure aborts the action. `AppendOnlyGuard` blocks edits and deletes, and only retention deletes (R19, R22) | ✅ | ✅ |
+| V | **Auditable** | Inputs and raw POWWR responses (`PricingRunSite`), engine results, uplifts (requested and applied), microbusiness declaration changes, PDFs and PDF downloads (with wording versions), Outlook drafts, report exports and settings changes (with old and new values) are all stored, with the Entra identity and a UTC time. The audit row is written in the same `SaveChanges` as the action, so failure aborts the action. `AppendOnlyGuard` blocks edits and deletes, and only retention deletes (R19, R22) | ✅ | ✅ |
 | VI | **One Set of Numbers** | A single `PricingEngine` with one `Rounding.ToPennies`. Its output is persisted, and the screen, PDF and reporting only format stored figures (R7). `decimal` throughout. Engine tests are required. Both POWWR APIs sit behind adapter interfaces with config-selected mocks as the default. Tests never call live POWWR (R4, R5) | ✅ | ✅ |
 | VII | **Local First, Azure-Ready** | Runs with only the .NET SDK and SQL Server Express. The secrets, database, file store, reporting export, logging and redirect URI are all behind configuration or an interface. EF migrations run on SQL Server and Azure SQL. **No Azure resources are created by this feature.** Bicep and CI/CD belong to the deployment feature | ✅ | ✅ |
 | VIII | **Keep It Simple** | C# and .NET only. Playwright's Chromium is installed with its own PowerShell script, run through `pwsh` from the repo's local .NET tool manifest (R26). Server-rendered Razor Pages, with `app.js` for small progressive enhancements. Triage's layout and conventions, with the four constitution-mandated differences in R1. Packages beyond the named stack are justified below | ✅ | ✅ |
-| IX | **Compliance Wording Is Managed** | Every customer-facing statement comes from versioned admin settings, starting as placeholders that are visibly marked: validity, indicative notice, credit check, commission disclosure, microbusiness, VAT/CCL note, terms text, and the terms URL. Each PDF records the wording versions it used. Changes are audited by an Admin. Company contact details are configuration, not code (R19) | ✅ | ✅ |
+| IX | **Compliance Wording Is Managed** | Every customer-facing statement comes from versioned admin settings, starting as placeholders that are visibly marked: validity, indicative notice, credit check, commission disclosure, the three microbusiness items, VAT/CCL note, terms text, and the terms URL. Placeholders block PDFs and Outlook drafts outside Development, and approval records the compliance approver's name. Each PDF records the wording versions it used. Changes are audited by an Admin. Company contact details are configuration, not code (R19) | ✅ | ✅ |
 
-**Gate result**: PASS before research and PASS after design. There are no violations, so Complexity
-Tracking is empty. The Triage differences in R1 (Razor Pages, Microsoft.Identity.Web, user secrets,
-SQL Server) are what the constitution's own Technology section requires, so they are not deviations.
+**Gate result**: PASS before research. After design, PASS **once the constitution is amended**.
+
+- **Why it needs amending**: the security and compliance review (spec Clarifications, 2026-10-30)
+  removed the Manager role and manager approval. Principle I and the Technology section still name
+  "Agent, Manager and Admin" roles. Principle I can't be waived, so this isn't recorded as a
+  Complexity Tracking exception.
+- **The fix**: an amendment through `/speckit-constitution` that names the Agent and Admin roles. The
+  amendment changes no security rule: every role is still enforced on the server.
+- **Triage differences**: those in R1 (Razor Pages, Microsoft.Identity.Web, user secrets, SQL Server)
+  are what the constitution's own Technology section requires, so they are not deviations.
 
 ## Project Structure
 
@@ -133,7 +141,7 @@ PricingTool/
 │   │                                # LowUseTest, MultiSiteCombiner, AnnualCostCrossCheck, Rounding, MoneyFormat
 │   ├── Quotes/                      # QuoteService, PricingService (orchestrates the adapter → engine → store), PriceValidity,
 │   │                                # PriceChangeCheck, PdfEligibility, QuoteAccess, QuoteReference
-│   ├── Approvals/                   # UpliftPolicy, ApprovalService
+│   ├── Limits/                      # LimitPolicy (per-fuel and supplier maximums, capping, re-check)
 │   ├── Pdf/                         # CustomerQuoteModelBuilder, CustomerQuoteDocument.razor, PlaywrightCustomerPdfRenderer, PdfFileName
 │   ├── Outlook/                     # IOutlookDraftService, GraphOutlookDraftService, EmlOutlookDraftService, EmlWriter
 │   ├── Staff/                       # IStaffDirectory, GraphStaffDirectory, DevStaffDirectory
@@ -152,7 +160,6 @@ PricingTool/
 │   ├── Dev/                         # SignIn (Development only)
 │   ├── Quotes/                      # New, Index (history), Details (results), Edit, Upload, _AddressList, _MeterList,
 │   │                                # _MeterFields, _ConsumptionFields, _Results partials
-│   ├── Approvals/Index.cshtml
 │   ├── Reports/Index.cshtml
 │   ├── Settings/                    # Index (sections + drawers), ChangeLog
 │   └── Error.cshtml
@@ -165,7 +172,7 @@ PricingTool/
 
 PricingTool.Tests/
 ├── PricingTool.Tests.csproj         # xUnit 2.9.3, Microsoft.NET.Test.Sdk, xunit.runner.visualstudio, coverlet.collector, Mvc.Testing
-├── Validation/  Pricing/  Powwr/  Approvals/  Uploads/  CustomerSafe/  Reporting/  Time/  Security/  Design/
+├── Validation/  Pricing/  Powwr/  Limits/  Uploads/  CustomerSafe/  Reporting/  Time/  Security/  Design/
 ├── Support/FakeTimeProvider.cs, TestData builders (made-up data only)
 └── TestData/                        # sites-50-electricity.csv/.xlsx and bad-row samples (made-up MPANs with valid check digits)
 ```
@@ -210,13 +217,17 @@ Form POST ─▶ QuoteInputValidator (server) ──errors──▶ redisplay wi
           save PricingRun + PricingRunSites + PriceOptions + NoQuotes + AuditEntry + ReportingRecord   ← one transaction
                │
                ▼
-          redirect → /Quotes/{id} (results read the stored figures; UpliftPolicy evaluated on read)
+          redirect → /Quotes/{id} (results read the stored figures)
+
+Uplift limits (R13): the per-fuel maximum is checked by QuoteInputValidator before anything is saved
+or sent; supplier maximums cap each plan's uplift when the request is built (capped options flagged).
 ```
 
 ### Generating the PDF and opening it in Outlook
 
 ```text
-GeneratePdf ─▶ PdfEligibility (fetched today? no price changes? approvals? recommended? no failed sites?)
+GeneratePdf ─▶ PdfEligibility (fetched today? no price changes? within current limits? no placeholder
+               wording outside Development? recommended? no failed sites?)
            ─▶ CustomerQuoteModelBuilder (stored figures + current wording versions → customer-safe model)
            ─▶ ICustomerPdfRenderer (HtmlRenderer → Playwright Chromium, assets via route handler)
            ─▶ IFileStore.Save + CustomerPdf + AuditEntry + ReportingRecord(PdfGenerated)
@@ -228,14 +239,13 @@ OpenInOutlook ─▶ PricesFetchedOn == today? ─▶ IOutlookDraftService (Grap
 
 | Screen | Kit components |
 |---|---|
-| App shell | `.app-shell` > `.sidebar` (navy, **white** logo `cu-logo-150-white.png` with a 250 `srcset`, `cu-mark-white.png` for the rail) + `.app-main` > `.topbar` + `.content`. Nav: New quote (`CanQuote`), Quotes (all), Approvals (`CanApprove`), Reports and Settings (`CanAdmin`) |
+| App shell | `.app-shell` > `.sidebar` (navy, **white** logo `cu-logo-150-white.png` with a 250 `srcset`, `cu-mark-white.png` for the rail) + `.app-main` > `.topbar` + `.content`. Nav: New quote (`CanQuote`, Agent), Quotes (all; Admins see every quote read-only), Reports and Settings (`CanAdmin`) |
 | Sign-in, loading, no access, dev sign-in | `.standalone`, `.standalone-card`, `.standalone-logo` (colour logo), `.standalone-icon`, `.standalone-actions`, `.btn-primary` |
 | New and Edit quote | Postcode → address → meter picker at the top, using `.field-inline` + `.btn-primary`, a `.search-results` list of `.search-result` buttons, and "Enter details yourself" (`.btn-link`). One `.card` per section with a `.section-heading`. `.field` / `.field-label` / `.form-input` / `.form-select` / `.field-hint` / `.form-error`. `.seg` for fuel and quote type, `.check-chip` for terms, `.switch-row` for "no standing charge" and "include VAT and CCL", `.tag` for microbusiness, `.notice.tone-amber` for meter warnings, `.form-actions` with `.btn-cta` "Get prices" |
 | While pricing | `.load-steps` (checking details → asking suppliers → working out costs), with `.skeleton` rows for the results |
-| Results (quote details) | A `.table` inside a `.card--flush` with `.table-scroll`, `.num` figures, `.filter-pill` filters, `.tag.tone-green` "Recommended", `.tag.tone-amber` "Awaiting approval", `.tag.tone-coral` "Above supplier maximum". Savings use `.delta--good`/`.delta--bad` marks plus words, never coloured text. `.btn-cta` with `.btn-count` for "Generate customer PDF (n)". `CU.toast()` with an "Open in Outlook" action. `.notice.tone-coral` for errors, `.notice.tone-amber` for warnings, `.empty-state` when nothing is priced. The uplift dialog uses `.modal-overlay` > `.modal` through `data-open` |
+| Results (quote details) | A `.table` inside a `.card--flush` with `.table-scroll`, `.num` figures, `.filter-pill` filters, `.tag.tone-green` "Recommended", `.tag.tone-amber` "Capped at supplier maximum (x)" (agent-only). A `.switch-row` "Customer view" re-renders the results without agent-only data (FR-099). Savings use `.delta--good`/`.delta--bad` marks plus words, never coloured text. `.btn-cta` with `.btn-count` for "Generate customer PDF (n)". `CU.toast()` with an "Open in Outlook" action. `.notice.tone-coral` for errors, `.notice.tone-amber` for warnings, `.empty-state` when nothing is priced. The uplift dialog uses `.modal-overlay` > `.modal` through `data-open` |
 | Quote history | `.table` in a `.card--flush`, a search `.field-inline`, `.pagination`. The history timeline uses `.timeline-entry` / `.timeline-event` |
-| Approvals | `.split` (`.split-list` of `.list-row`s + `.split-detail`), `.btn-primary` Approve, `.btn-secondary` Decline with a `.form-textarea` comment. Never swapped |
-| Reports | Filter `.select-trigger[data-menu]` + `.menu` (not inside swapped HTML), `.kpi-strip` > `.kpi-mini` totals, `.table`, `.btn-outline` "Export CSV" |
+| Reports | Filter `.select-trigger[data-menu]` + `.menu` (not inside swapped HTML), `.kpi-strip` > `.kpi-mini` totals, `.table`, `.btn-outline` "Export CSV", and a `.notice.tone-amber` when exports have been failing for over an hour |
 | Settings | `.card` sections, each edited in a `.drawer-wrap` > `.drawer` (`data-open`), and a change log `.table` |
 | Icons | Lucide inline SVG through `<icon name="…">`: 24×24 viewBox, `currentColor`, 2px stroke, usually 16 px |
 
@@ -302,7 +312,7 @@ the Setup phase runs.
 | **US2** | Gas |
 | **US3** | PDF |
 | **US4** | Outlook |
-| **US5** | Limits and approvals |
+| **US5** | Uplift limits: per-fuel maximums, supplier maximums per fuel, capping, re-check before PDF and Outlook |
 | **US6** | Multi-site and upload |
 | **US7** | History, price-change check and retention |
 | **US8** | Settings pages and change log |
@@ -313,6 +323,11 @@ the Setup phase runs.
 
 ## Risks and follow-ups
 
+- **Constitution amendment**: Principle I and the Technology section still name a Manager role. Amend
+  them with `/speckit-constitution` before `/speckit-tasks`, or `/speckit-analyze` will report the
+  mismatch as CRITICAL. `CLAUDE.md` ("Roles: Agent, Manager, Admin") follows in the same change.
+- **Blank limits allow no uplift** (FR-060): the seed data must set every per-fuel and supplier
+  maximum. A supplier added later with no maximum is priced at zero uplift until an admin sets one.
 - **POWWR answers** (research open items). The biggest risks are:
   - the commission basis (Q3);
   - the start date field (Q9);
@@ -336,7 +351,8 @@ the Setup phase runs.
 
 ## Complexity Tracking
 
-No constitution violations. Nothing to justify.
+No waivable deviations. The Manager-role mismatch is fixed by amending the constitution (see the gate
+result), not by recording an exception here.
 
 | Violation | Why Needed | Simpler Alternative Rejected Because |
 |-----------|------------|-------------------------------------|

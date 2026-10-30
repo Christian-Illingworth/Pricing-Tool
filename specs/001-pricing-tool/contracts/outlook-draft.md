@@ -8,6 +8,9 @@ mailbox, with only the PDF attached (FR-054). See research R3.
 - The PDF exists, and the user is the quote's owner.
 - The PDF's `PricesFetchedOn` is today, UK time (FR-052, FR-076). Otherwise the agent sees "These prices
   have expired. Re-price and generate a new PDF first."
+- The PDF's options are still within the per-fuel and supplier maximums in force now (FR-063).
+  Otherwise the agent is told which options are over a lowered limit and must re-price.
+- Outside the Development environment, none of the wording the PDF used is a placeholder (FR-050).
 
 ## Graph mode (`Outlook:Mode = Graph`)
 

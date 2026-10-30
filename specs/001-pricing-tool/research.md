@@ -50,8 +50,11 @@ it. Folders inside the one project (`Services/Pricing`, `Powwr/`, `Data/`) give 
 **Decision**:
 - **Entra mode** (`Authentication:Mode = Entra`): Microsoft.Identity.Web, OpenID Connect, single-tenant
   (our tenant ID only), cookie session.
-  - App roles `Agent`, `Manager` and `Admin` are defined in the app registration and arrive in the
-    `roles` claim.
+  - App roles `Agent` and `Admin` are defined in the app registration and arrive in the `roles` claim
+    (FR-002). There is no Manager role.
+  - **Session lifetime**: the sign-in cookie has an absolute lifetime of `Authentication:SessionHours`
+    (8), with no sliding renewal, so group or role changes apply at the next sign-in (FR-094). Sign-ins
+    and refused access are written to the app's logs (FR-098).
   - The group restriction is enforced twice:
     1. **IT, in Entra:** the enterprise app has "Assignment required" on, and only "Pricing Tool Users"
        (or role assignments within it) is assigned.
@@ -60,25 +63,25 @@ it. Folders inside the one project (`Services/Pricing`, `Powwr/`, `Data/`) give 
   - The registration emits only "groups assigned to the application", so the `groups` claim can't
     overflow.
 - **Development mode** (`Authentication:Mode = Development`) is the test sign-in until IT provides an app
-  registration. It is a cookie scheme, and `/Dev/SignIn` lists made-up staff with fixed roles: an agent,
-  two managers, an admin, and a user with no role. It is registered only when
+  registration (FR-095). It is a cookie scheme, and `/Dev/SignIn` lists made-up staff with fixed
+  roles: two agents, an admin, a person with both roles, and a user with no role. It is registered only when
   `IHostEnvironment.IsDevelopment()` is true, and startup throws if the mode is set to `Development` in
   any other environment. Outside Development, `/Dev/SignIn` returns 404. A test checks both.
 - **Authorisation policies**, enforced on the server on every page and handler:
 
   | Policy | Who |
   |---|---|
-  | `CanQuote` | Agent or Manager |
-  | `CanViewAllQuotes` | Manager or Admin |
-  | `CanApprove` | Manager |
+  | `CanQuote` | Agent |
+  | `CanViewAllQuotes` | Admin (read-only) |
   | `CanAdmin` | Admin |
 
   The fallback policy is "signed in, in the group, and holding any app role". Anyone else is sent to
   `/Account/NoAccess` and sees no data.
-- **Quote ownership**: only a quote's owner can change it (re-price, select, PDF, Outlook). Managers and
-  Admins can view other people's quotes but not change them. The spec gives them "see" rights only.
+- **Quote ownership**: only a quote's owner can change it (re-price, select, PDF, Outlook). Admins can
+  view other people's quotes but not change them, and the Admin role alone can't quote (FR-002,
+  FR-003). An agent asking for another agent's quote gets 404.
 - **Staff record**: on each sign-in, a `StaffMember` row is created or updated from the token's `oid`,
-  `name` and `preferred_username`. Uplift limits for an individual are keyed by this record.
+  `name` and `preferred_username`. It also holds the person's "Customer view" choice (FR-099).
 
 **Rationale**: two independent gates satisfy Principle I even if the Entra assignment is misconfigured.
 Emitting only application groups is Microsoft's documented way to avoid group overage, so no extra Graph
@@ -150,7 +153,7 @@ links (which can't attach files).
     `BusinessType`.
   - `QuoteDefinitions` has one entry per included supplier from the admin supplier list, using its
     pricing name, with one `Plan` per requested term. Each plan carries that supplier and term's
-    effective uplifts. `PlanType` is left out until Q4 is answered, so every plan type returns, and
+    uplifts, capped at the supplier's maximum for the fuel (R13, FR-062). `PlanType` is left out until Q4 is answered, so every plan type returns, and
     "no standing charge" filters on the returned standing charge.
   - Quote-level `Uplift` and `StandingChargeUplift` carry the quote's default uplifts, as a fallback.
   - Profile class and MTC are sent as integers (R5). `ContractRenewalDate` carries the new contract's
@@ -355,38 +358,37 @@ charge and a current unit rate for every register the site prices on. Otherwise 
 - **Failed requests**: a technical failure (`PricingRunSite.Status = Failed`) is not a no-quote reason.
   The run is "incomplete", and the PDF is blocked until those sites are retried.
 
-## R13. Uplift limits and approvals
+## R13. Uplift limits (hard limits, no approvals)
 
-**Decision**: `UpliftPolicy.Evaluate` is pure and tested. It is evaluated **when read**, so that
-approvals and changes to limits take effect straight away. It works through these checks in order:
+**Decision**: `LimitPolicy` is a pure static class with unit tests. It applies FR-058 to FR-063. There
+are no role or per-person limits and no approval process.
 
-1. **Supplier maximum.** If either uplift is above the supplier's maximum for that measure (FR-059), the
-   status is `AboveSupplierMax`. This is a hard limit that no one can approve (FR-066), and the maximum
-   is shown.
-2. **Staff limit.** The person's limit for the quote's fuel is their individual limit if one is set
-   (FR-058); otherwise it is the **highest** limit among their quoting roles (Agent, Manager). A blank
-   limit means no limit for that measure. If either uplift is above it, go to step 3; otherwise the
-   status is `Within`.
-3. **Approvals.**
-   - `Approved` if an approved `ApprovalItem` on this quote, for the same supplier and term, has unit
-     uplift ≥ the option's and standing-charge uplift ≥ the option's (FR-065).
-   - Otherwise `AwaitingApproval` if a pending item covers it.
-   - Otherwise `Declined` if the latest decision for the key was a decline.
-   - Otherwise `NeedsApproval`.
+- **The limits**:
+  - **Per-fuel maximums**, for everyone: the settings `UpliftLimit.{Electricity|Gas}.UnitRate`
+    (p/kWh) and `.StandingCharge` (p/day).
+  - **Supplier maximums**: four nullable columns on `Supplier`, a unit-rate and standing-charge pair
+    for each fuel.
+  - **Blank** means **0**: no uplift above zero is allowed (FR-060). That's why the seed data sets
+    starting maximums for every fuel and supplier.
+- **On entry** (`QuoteInputValidator`): the default uplifts and every per-supplier, per-term override
+  must be ≥ 0 and ≤ the per-fuel maximum. Going over either measure on its own is enough. The error
+  names the maximum, and nothing is sent to POWWR (FR-061).
+- **Building the request** (`PricingService`): for each supplier and term, the applied uplift for each
+  measure is the lower of the requested uplift and the supplier's maximum for the fuel. When it is
+  lower than requested, the option stores `IsCappedAtSupplierMax`, and the results show the agent the
+  amber tag "Capped at supplier maximum (x)" (FR-062). Both the requested and applied uplifts are
+  stored.
+- **Before a PDF or Outlook draft** (`PdfEligibility`): every selected option's *applied* uplifts are
+  checked against the per-fuel and supplier maximums **in force now** (FR-063). Any option over a
+  limit blocks the action, with a message naming the options, until the quote is re-priced. PDFs
+  already stored stay downloadable.
+- **Admin side**: a default uplift above its fuel's maximum is refused when saved (US5-5). Every limit
+  change is audited with the old and new values (FR-082).
+- **Reporting**: each price records whether it was capped (FR-084).
 
-The PDF and Outlook are allowed only when every selected option is `Within` or `Approved` (FR-053,
-SC-009). The same check runs again on the server when the PDF is generated.
-
-**Approval requests**:
-- They cover the selected options that need approval, with each supplier, term and uplift pair, and the
-  agent's reason (FR-061).
-- States: `Pending` → `Approved` or `Declined`. A decline requires a comment (FR-062).
-- `DecidedById` can't equal `RequestedById` (FR-063), and this is checked on the server.
-- A `rowversion` token stops two managers deciding the same request at once.
-- Every request and decision writes an `AuditEntry` and a reporting record (FR-067).
-
-**Rationale**: a manager acting as a quoting agent is held to Manager limits (spec assumption). Taking
-the highest of the person's quoting roles is the reading that doesn't penalise holding several roles.
+**Rationale**: these are the decisions from the security and compliance review in spec.md. Capping
+at the supplier's maximum, instead of refusing, means one default uplift still works across suppliers
+whose maximums differ.
 
 ## R14. Price validity and price-change checks
 
@@ -521,6 +523,10 @@ cross-field MPAN rules cleanly. Plain validators are easier to test.
 - **File name**: built by `PdfFileName.For(customerName, fuel, date)`. Characters in
   `Path.GetInvalidFileNameChars()` plus `/\:*?"<>|` are replaced by `-`, runs of whitespace become `-`,
   and the name is trimmed to 100 characters (FR-048).
+- **Document properties** (FR-048): the HTML `<title>` is "Consultiv Utilities quote {reference}",
+  which Chromium writes as the PDF's title. Chromium sets no author, subject or keywords. Its own
+  creator, producer and date fields are allowed by FR-048. The quickstart checks the properties in a
+  PDF viewer.
 - **Storage**: the PDF is stored through `IFileStore` (R20) and recorded as `CustomerPdf`, with the
   wording version IDs it used (FR-051) and its SHA-256 hash. Re-downloading returns the stored bytes
   unchanged (US7-4).
@@ -540,15 +546,23 @@ cross-field MPAN rules cleanly. Plain validators are easier to test.
 
 **Decision**:
 - **A separate model**: customer-facing output is built only from `CustomerQuoteDocumentModel`. It is
-  assembled by `CustomerQuoteModelBuilder` from the stored engine output and has **no** property for base
-  rates, uplift, commission, supplier notes (`ExtraInfo`, `FooterMessage`, `FooterNotes`) or limit and
-  approval status. The full list of allowed fields is in
+  assembled by `CustomerQuoteModelBuilder` from the stored engine output. It has **no** property for
+  any agent-only data in FR-100: base rates, uplift, annual cost before uplift (`RawBaseAnnualPrice`),
+  commission and its basis, supplier notes (`ExtraInfo`, `FooterMessage`, `FooterNotes`), limits,
+  capped flags, POWWR references or cross-check figures. The full list of allowed fields is in
   [contracts/customer-pdf.md](contracts/customer-pdf.md).
+- **Customer view** (FR-099): when the agent turns it on, the results fragment is rendered on the
+  server **without** the agent-only columns, capped tags and notes. They aren't hidden with CSS. The
+  choice is stored on `StaffMember`, so it stays on across pages until turned off.
 - **Commission disclosure**: the wording may contain named placeholders: `{CommissionTotal}`,
   `{CommissionUpfront}`, `{CommissionMonthly}` and `{CommissionPerYear}` for the recommended option, and
   `{SupplierName}`. The builder fills them in **only inside the disclosure paragraph** (FR-049).
-- **Placeholder wording**: any wording still marked as a placeholder renders inside a visible
-  "PLACEHOLDER – NOT APPROVED WORDING" frame (FR-050).
+- **Placeholder wording**: in the Development environment, any wording still marked as a placeholder
+  renders inside a visible "PLACEHOLDER – NOT APPROVED WORDING" frame. In every other environment,
+  `PdfEligibility` refuses to generate a PDF or create an Outlook draft while any wording item the PDF
+  would use is a placeholder, and names the items (FR-050).
+- **Disclosure scope**: compliance decides whether the disclosure uses the pound placeholders. The tool
+  never requires an amount (FR-049).
 - **The Outlook draft**: it has no body, subject or recipients, so the only customer content is the PDF.
 - **Required tests** (Principle II):
   1. A reflection test fails if the customer model, or any type inside it, gains a property whose name
@@ -568,20 +582,28 @@ cross-field MPAN rules cleanly. Plain validators are easier to test.
   - The current value is the highest version for the key.
   - The wording a PDF used is recorded by version ID.
   - The change log (FR-082) is the version history plus `AuditEntry` rows, with the old and new values.
+  - **Wording approval** (FR-050, FR-082): to clear a wording item's placeholder flag, the admin must
+    tick "approved by compliance" and give the approver's name, which is stored as
+    `ComplianceApprover` on that version, next to who saved it and when.
+  - **Microbusiness wording** is three keys, all required on a microbusiness PDF (FR-047):
+    commission disclosure, dispute resolution scheme, and cooling-off period.
+  - **Uplift maximums per fuel** are four keys (R13). Saving a default uplift above its fuel's maximum
+    is refused.
 - **Effective-dated values** are `EffectiveRate` rows: VAT standard and reduced, CCL per fuel, low-use
   thresholds per fuel, and the "whole supply qualifies" percentage. Each has an `EffectiveFrom` date, and
   a lookup takes the latest row on or before the date given. Rows are never edited. A correction is a new
   row, and deleting a future-dated row is allowed and audited.
-- **Structured settings** are tables: `Supplier` and its aliases, the payment model and maximum uplifts,
-  and `UpliftLimit` (per role or staff member, per fuel). Each change writes an `AuditEntry` with JSON
-  old and new values.
+- **Structured settings** are tables: `Supplier` and its aliases, the payment model, and maximum
+  uplifts for each fuel. Each change writes an `AuditEntry` with JSON old and new values. There are no
+  role or per-person limits (FR-058).
 - **Our company details** for the PDF (name, address, phone, email, website and company registration
   number) are in configuration (`Company:` in `appsettings.json`). They are not hard-coded, and they are
   not regulatory wording, so the spec doesn't make them admin settings. The terms address *is* an admin
   setting (FR-081).
 - **Seed data**: a migration seeds starting values. Wording is placeholder text with `IsPlaceholder =
   true`. Suppliers are POWWR's example names with made-up aliases. Starting limits and thresholds follow
-  the spec, and every seeded value is marked "to confirm".
+  the spec, and every seeded value is marked "to confirm". Uplift maximums are seeded for every fuel and
+  supplier, because a blank one allows no uplift (FR-060).
 - **Audit entries**: `AuditEntry` (who, when in UTC, action, entity, quote ID, old and new JSON) is
   written in the **same** `SaveChanges` as the action. If saving fails, the action fails (Principle V).
 - **Append-only tables**: an EF Core `SaveChangesInterceptor` (`AppendOnlyGuard`) throws if any
@@ -635,10 +657,19 @@ cross-field MPAN rules cleanly. Plain validators are easier to test.
     - PDFs produced;
     - PDFs opened in Outlook;
     - estimated commission: the sum, over the filtered quotes with a PDF, of the recommended option's
-      contract-total commission in each quote's latest PDF event. This is our reading of FR-085; finance
-      to confirm.
-  - CSV export of the filtered list. A small RFC 4180 writer prefixes any cell starting with `=`, `+`, `-`
-    or `@` with `'` to block formula injection, and each export writes an `AuditEntry` (FR-086).
+      whole-contract commission in each quote's latest PDF event (FR-085).
+  - CSV export of the filtered list (FR-085):
+    - the same columns as the Reports table, with no customer contact details;
+    - a small RFC 4180 writer, which prefixes any cell starting with `=`, `+`, `-` or `@` with `'` to
+      block formula injection;
+    - each export writes an `AuditEntry` with who, when, the filters used and the number of rows
+      (FR-086).
+  - **Export failure notice** (FR-089): when the oldest unexported outbox entry is more than an hour
+    old, the Reports page shows Admins a `.notice.tone-amber` saying how many records are waiting.
+- **Contents**: records never include the customer's contact name, email or phone (FR-084). Each price
+  carries the commission basis and whether it was capped.
+- **Reporting store access** (FR-087): the local folder is under the git-ignored `App_Data`. In Azure,
+  access to the Blob container is limited to Admins and the Power BI service (deployment feature).
 
 ## R22. Retention
 
@@ -646,9 +677,9 @@ cross-field MPAN rules cleanly. Plain validators are easier to test.
 (default `02:00` UK time).
 - **What it deletes**: quotes whose `LastActivityUtc` is older than the admin setting
   `Retention.Years` (default 6, from the most recent activity, as the spec assumes). With each quote go
-  its sites, runs, options, approvals, PDFs (files first, then rows), Outlook draft records, the quote's
-  audit entries, its reporting records and outbox entries, and the exported reporting files (through
-  `IReportingExportStore.DeleteAsync`).
+  its sites, runs, options, PDFs (files first, then rows), Outlook draft records, the quote's audit
+  entries, its reporting records and outbox entries, and the exported reporting files (through
+  `IReportingExportStore.DeleteAsync`) (FR-080). Downloaded CSVs are outside the tool's reach.
 - **Batching**: it deletes in batches of 50 quotes, each batch in its own transaction.
 - **Logging**: it logs counts and writes one system `AuditEntry` per run, with counts only.
 - **What it keeps**: the admin settings change log isn't quote data, so retention leaves it alone.
@@ -691,8 +722,7 @@ cross-field MPAN rules cleanly. Plain validators are easier to test.
 - **App shell**: `_Layout.cshtml` follows the kit's shell. The navy `.sidebar` holds the white
   `cu-logo-150-white.png` (with a 250 `srcset`), `cu-mark-white.png` for the rail, and these nav items:
   - New quote (`CanQuote`)
-  - Quotes (all roles)
-  - Approvals (`CanApprove`)
+  - Quotes (all roles: an agent's own quotes, or every quote for an Admin)
   - Reports and Settings (`CanAdmin`)
 
   Then come the `.topbar` and `.content`. Nav items are left out for roles that don't have them, and the
@@ -709,6 +739,8 @@ cross-field MPAN rules cleanly. Plain validators are easier to test.
   - result filters and sorting, swapping in the results partial;
   - `.load-steps` while prices are fetched;
   - `CU.toast()` with an Open action after "Open in Outlook";
+  - the "Customer view" `.switch-row`, which re-fetches the results partial without the agent-only
+    data (FR-099);
   - the antiforgery token header on `fetch`.
 - **Swapped HTML and the kit's menus**: `kit.js` binds `[data-menu]`, `.nav-item[data-tab]` and `.split`
   **once, per element, at page load**, and has no re-initialise function. Dialogs and drawers
@@ -765,12 +797,12 @@ data). These areas are required by the constitution:
 | MPAN and MPRN validation | `MpanCoreTests` (check digit, POWWR examples, regions, IDNO), `MpanTopLineTests` (8-digit, 9-character MHHS, field agreement), `MprnTests`, `PostcodeTests`, `CompanyNumberTests`, `QuoteInputValidatorTests` |
 | POWWR mapping | `PowwrPricingRequestMappingTests` (every request field in the mapping contract), `PowwrPricingResponseMappingTests` (rates, raw decimals, no-quote reasons, `Error`, bad data), `MeterLookupMappingTests` (string to int, redaction, AMR, warnings, RFC 7807), `SupplierMatcherTests` |
 | Pricing engine | `VatCclCalculatorTests` (all three treatments and thresholds), `CommissionCalculatorTests` (both bases and payment models), `SavingCalculatorTests`, `MicrobusinessTestTests` (on the threshold, combined sites, declaration), `LowUseTestTests`, `MultiSiteCombinerTests` (totals, partial), `RoundingTests`, `AnnualCostCrossCheckTests`, `RegisterSplitTests` |
-| Uplift limits and approvals | `UpliftPolicyTests` (individual vs role, highest role, supplier maximum, approval coverage, decline, raise above approved), `ApprovalRulesTests` (no self-approval, comment needed to decline) |
+| Uplift limits | `LimitPolicyTests` (per-fuel maximum refused at entry; either measure alone; supplier cap applied and flagged; blank limit = 0; re-check against lowered limits before PDF and Outlook), `DefaultUpliftValidationTests` (default above the maximum refused) |
 | Spreadsheet uploads | `CsvSiteReaderTests`, `XlsxSiteReaderTests` (with an in-memory workbook), `SiteUploadValidatorTests` (repeated meter, other fuel, per-row errors) |
-| Customer-safe output | `CustomerModelShapeTests` (reflection), `CustomerPdfContentTests` (rendered HTML and file name), `EmlDraftWriterTests`, `PdfFileNameTests` |
+| Customer-safe output | `CustomerModelShapeTests` (reflection), `CustomerPdfContentTests` (rendered HTML, file name and `<title>`), `EmlDraftWriterTests`, `PdfFileNameTests`, `CustomerViewTests` (results fragment with Customer view on holds no agent-only data), `PlaceholderGateTests` (PDF and Outlook refused outside Development while wording is a placeholder; three microbusiness items required) |
 | Reporting records | `ReportingRecordBuilderTests` (schemaVersion, every FR-084 field, rounding pairs), `ReportingExportPathTests`, `OutboxBackoffTests`, `CsvWriterTests` (escaping, formula injection) |
 | Time | `PriceValidityTests` (UK midnight, British Summer Time changes) |
-| Security | `DevSignInTests` and `AuthorisationTests`, using `Microsoft.AspNetCore.Mvc.Testing` with the database left untouched: `/Dev/SignIn` returns 404 in Production; a dev mode outside Development fails at startup; an anonymous request is challenged; a role-less user gets NoAccess |
+| Security | `DevSignInTests` and `AuthorisationTests`, using `Microsoft.AspNetCore.Mvc.Testing` with the database left untouched: `/Dev/SignIn` returns 404 in Production; a dev mode outside Development fails at startup; an anonymous request is challenged; a role-less user gets NoAccess; an Admin-only user is refused New quote; the session cookie lasts 8 hours. `QuoteAccessTests` (pure): an agent can't read another agent's quote; an Admin can read but not change one |
 
 The test project carries a `FakeTimeProvider`, a subclass of `TimeProvider` of about 10 lines, so it
 doesn't need the testing package.
@@ -802,9 +834,8 @@ The tool's behaviour until each is answered is fixed by the spec or the decision
 | **P-17 (new)** | POWWR | Does `LatestPriceChange.Version` match `Rate.PricebookVersion`? | Compared directly (R14); if the formats differ, the check falls back to `LastPriceChange` ≥ the fetched date. Added to `docs/powwr/README.md` as question 17 |
 | F-1 | Finance | VAT and CCL partial-use rule, and the CCL rates | R8 settings, starting blank or "to confirm" |
 | F-2 | Finance | Supplier payment models | `UpfrontPercent` = 0 (all monthly) |
-| F-3 | Finance | Definition of "estimated commission" on the Reports page | R21 reading |
 | C-1 | Compliance | All customer wording and the terms address | Placeholders, visibly marked |
-| IT-1 | IT | App registration: roles, group assignment, `Mail.ReadWrite` (delegated), `User.Read`, emitting application groups, redirect URI | Development test sign-in and Eml mode |
+| IT-1 | IT | App registration: Agent and Admin roles, group assignment, `Mail.ReadWrite` (delegated), `User.Read`, emitting application groups, redirect URI | Development test sign-in and Eml mode |
 
 **Agent phone number on the PDF** (FR-047): the token doesn't carry it. In Entra mode, the app reads
 `businessPhones[0]` (else `mobilePhone`) from Graph `GET /me?$select=businessPhones,mobilePhone`, using

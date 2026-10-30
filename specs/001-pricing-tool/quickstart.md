@@ -45,10 +45,10 @@ Open `https://localhost:8101`. You are sent to the sign-in page. In Development 
 
 | Person | Role | Use for |
 |---|---|---|
-| Alex Agent | Agent | Quoting (US1–US4, US6, US7) |
-| Morgan Manager | Manager | Approvals (US5), quoting as a manager |
-| Riley Manager | Manager | Approving Morgan's requests (US5-6) |
-| Ada Admin | Admin | Settings (US8) and Reports (US9) |
+| Alex Agent | Agent | Quoting (US1–US7) |
+| Sam Agent | Agent | A second agent, to check agents can't see each other's quotes (US7-8) |
+| Ada Admin | Admin | Settings (US8), Reports (US9), viewing every quote read-only (US7-9) |
+| Bea Both | Agent and Admin | Someone holding both roles |
 | Pat Nobody | No role | The no-access page (FR-001) |
 
 **Where files go** (both folders are git-ignored):
@@ -128,6 +128,10 @@ reuse quotes made earlier.
 10. **Select three options and mark one Recommended.**
     - Expected: after reloading, the selection, the priced time and the pricebook version
       (`MOCK-yyyyMMdd`) are shown (US1-10).
+11. **Turn on Customer view.**
+    - Expected: the base rate and commission columns, capped tags and supplier notes disappear.
+    - View the page source: none of those values is in the HTML (FR-099).
+    - The switch stays on after moving to another page and back, until turned off (US1-11).
 
 ### US2: Gas (as Alex Agent)
 
@@ -157,8 +161,12 @@ reuse quotes made earlier.
      `{CommissionTotal}` (US3-2, SC-003).
    - The supplier notes are absent (FR-049).
 3. **The wording on the PDF:**
-   - The microbusiness wording appears for the `ZZ1 1AB` quote and not for `ZZ1 1AA` (US3-3).
-   - Placeholder wording sits in visible "PLACEHOLDER" frames (US3-4).
+   - All three microbusiness wording items (commission disclosure, dispute resolution, cooling-off)
+     appear for the `ZZ1 1AB` quote, and none appear for `ZZ1 1AA` (US3-3, FR-047).
+   - Placeholder wording sits in visible "PLACEHOLDER" frames. This is allowed only because the app is
+     running in Development (US3-4, FR-050).
+   - The PDF's properties (File → Properties in a PDF viewer) show the title "Consultiv Utilities
+     quote CUQ-…" and no author, subject or keywords (FR-048).
    - The indicative notice is present, and the footer link to the terms address works and is printed
      in full (US3-5).
 4. **Compare every money figure** on the PDF with the screen.
@@ -188,27 +196,23 @@ With the Development sign-in, the app is in `Eml` mode
 4. **Outlook unreachable:** in Graph mode, disconnect the network and click again.
    - Expected: a clear error, and Download PDF still works (US4-3).
 
-### US5: Uplift limits and approvals
+### US5: Uplift limits
 
-1. **As Ada Admin,** set the Agent electricity unit-rate limit to 1.0 p/kWh, and the British Gas
-   maximum to 2.5.
-2. **As Alex,** price with a 1.5 uplift. Expected:
-   - The affected options say "Needs approval".
-   - The PDF and Outlook are unavailable for them (US5-1, SC-009).
-3. **Request approval** with a reason.
-   - Expected: `.tag.tone-amber` "Awaiting approval".
-   - The request is on Morgan Manager's Approvals page (US5-2).
-4. **As Morgan, approve it with a comment.**
-   - Expected: as Alex, the outcome is shown and the PDF can be generated (US5-3).
-5. **Declines:** repeat with a new quote, and decline without a comment. The decline is rejected.
-   Decline with a comment.
-   - Expected: Alex sees the comment and must lower the uplift (US5-4).
-6. **Raising an approved uplift:** raise the approved uplift to 1.6 and re-price.
-   - Expected: a new approval is needed (US5-5).
-7. **Self-approval:** as Morgan, create a quote that needs approval and request it.
-   - Expected: on the Approvals page, Morgan can't approve their own request, but Riley can (US5-6).
-8. **Supplier maximum:** set British Gas to 3.0.
-   - Expected: "Above supplier maximum (2.5)", with no approval possible (US5-7).
+1. **As Ada Admin,** set the electricity maximums to 1.5 p/kWh and 10 p/day. Set British Gas's
+   electricity unit-rate maximum to 1.0, and clear Valda Energy's electricity maximums.
+2. **As Alex,** enter a unit-rate uplift of 2.0 and click Get prices.
+   - Expected: a field error naming the 1.5 maximum, and **no** pricing run is recorded (US5-1,
+     SC-009).
+3. **Price with 1.5.**
+   - Expected: British Gas options are priced at 1.0 and show the amber "Capped at supplier maximum
+     (1.0)" tag. The tag disappears when Customer view is on (US5-2).
+4. **Blank limit:** Valda Energy (if it prices) is priced with no uplift and marked capped (US5-3).
+5. **A limit lowered after pricing:** as Ada, lower the electricity unit-rate maximum to 1.2. As Alex,
+   click Generate customer PDF on the quote priced at 1.5.
+   - Expected: the tool names the options over the current limit and asks for a re-price. An existing
+     PDF still downloads (US5-4).
+6. **As Ada, set the electricity default unit-rate uplift to 2.0.**
+   - Expected: refused, because it is above the maximum (US5-5).
 
 ### US6: Multi-site (as Alex Agent)
 
@@ -235,20 +239,26 @@ With the Development sign-in, the app is in `Eml` mode
 1. **Quotes:** search by customer name, by reference, by MPAN `1600000001013`, by postcode `ZZ1 1AA`,
    and by date range.
    - Expected: matching quotes only, and only Alex's own (US7-1, FR-003).
-2. **As Morgan,** the same search shows all agents' quotes (FR-003).
-3. **Reopen a quote** with `Powwr:Mock:ChangedSuppliers` set.
+2. **As Ada Admin,** the same search shows all agents' quotes (FR-003). Opening Alex's quote shows no
+   buttons to change, re-price, generate a PDF or open Outlook, and posting to those handlers is
+   refused (US7-9).
+3. **As Sam Agent,** open Alex's quote, or one of its PDFs, by typing its address.
+   - Expected: "not found", with nothing of the quote shown (US7-8, FR-093).
+4. **Reopen a quote** with `Powwr:Mock:ChangedSuppliers` set.
    - Expected: "Prices have changed since this was priced" (US7-2).
-4. **Re-price** keeps the earlier runs and PDFs (US7-3).
-5. **Re-download** an earlier PDF.
+5. **Re-price** keeps the earlier runs and PDFs (US7-3).
+6. **Re-download** an earlier PDF.
    - Expected: byte-identical to the original, showing its own validity date (US7-4).
-6. **Open in Outlook on an aged PDF** (age it with `UPDATE CustomerPdfs SET PricesFetchedOn =
+7. **Open in Outlook on an aged PDF** (age it with `UPDATE CustomerPdfs SET PricesFetchedOn =
    DATEADD(day, -1, PricesFetchedOn) WHERE Id = <id>`).
    - Expected: the tool requires a re-price and a new PDF (US7-5).
-7. **History** lists every request, result, uplift, approval, PDF and draft, with who and when (US7-6).
-8. **Retention:** as Ada, set the retention period to 0 years. Restart the app with
+8. **History** lists every request, result, uplift, microbusiness declaration change, PDF, PDF
+   download and draft, with who and when (US7-6).
+9. **Retention:** as Ada, set the retention period to 0 years. Restart the app with
    `Retention:RunAtUkTime` set one minute ahead of now.
-   - Expected: the clean-up removes quotes, their PDFs and their reporting files, and the log shows
-     the counts (US7-7). Set the period back to 6 afterwards.
+   - Expected: the clean-up removes quotes, their PDFs, their history and their reporting records and
+     files. The settings change log stays, and the log shows the counts (US7-7). Set the period back
+     to 6 afterwards.
 
 ### US8: Admin settings (as Ada Admin)
 
@@ -263,27 +273,38 @@ With the Development sign-in, the app is in `Eml` mode
      (US8-3).
 4. **Map an unmapped lookup supplier name to a supplier.**
    - Expected: new quotes recognise it (US8-4).
-5. **As Alex and as Morgan, open `/Settings`.**
-   - Expected: they are refused, even by typing the URL (US8-5).
+5. **As Alex, open `/Settings`.**
+   - Expected: refused, even by typing the URL (US8-5).
+6. **Mark the credit check wording as approved by compliance.**
+   - Expected: an approver's name is required, and the change log shows the approver, who saved it,
+     and when (US8-6).
+7. **Placeholder gate:** with any wording still a placeholder, run with `ASPNETCORE_ENVIRONMENT` set
+   to anything other than `Development` (with Entra sign-in).
+   - Expected: Generate customer PDF and Open in Outlook are refused, naming the wording items still
+     waiting for approval (FR-050).
 
 ### US9: Reporting (as Ada Admin)
 
 1. **Open Reports.**
    - Expected: the events from the scenarios above appear with every FR-084 field (US9-1).
 2. **Filter** by agent, date, fuel, supplier, region and quote type.
-   - Expected: the totals update. Export to CSV, and the export appears in the change log (US9-2,
-     FR-086).
-3. **As Alex and as Morgan, open `/Reports`.**
-   - Expected: they are refused (US9-3).
+   - Expected: the totals update. Export to CSV. The CSV has the table's columns and no contact
+     details. A customer name starting with `=` appears as text, not a formula. The export appears in
+     the change log with its filters and row count (US9-2, FR-085, FR-086).
+3. **As Alex, open `/Reports`.**
+   - Expected: refused (US9-3).
 4. **Store outage:** make `App_Data/reporting` read-only, then price a quote and generate a PDF.
    - Expected: the agent's speed is unchanged, and the outbox shows pending entries.
    - Restore write access. Within 15 minutes, the files appear under `quotes/yyyy/MM/dd/`, and each
      validates against [contracts/reporting-record.v1.schema.json](contracts/reporting-record.v1.schema.json)
      (US9-4, SC-007).
+   - While the folder is still read-only and more than an hour has passed (or the outbox entry's
+     `CreatedUtc` is aged in SQL), the Reports page shows the "records waiting" notice (US9-5).
 
 ### Access and security checks
 
-1. **As Pat Nobody** (no role): every page shows No access, with no data (FR-001).
+1. **As Pat Nobody** (no role): every page shows No access, with no data (FR-001). **As Ada Admin**
+   (Admin only): New quote is refused (FR-002).
 2. **Development sign-in outside Development:** set `ASPNETCORE_ENVIRONMENT=Production` and run.
    - Expected: startup fails if `Authentication:Mode = Development`.
    - `/Dev/SignIn` returns 404 (Principle I; this is also an automated test).

@@ -32,7 +32,7 @@ The request body is `{ "quoteDetails": QuoteDetails }`.
 | `Uplift` | `Quote.Contract.DefaultUnitRateUplift` | p/kWh (Q5) |
 | `StandingChargeUplift` | `Quote.Contract.DefaultStandingChargeUplift` | p/day (Q5) |
 | `QuoteDefinitions[]` | One per supplier that is **active**, supplies the fuel and passes the include/exclude filter | `Supplier` = `PricingName` |
-| `QuoteDefinitions[].Plans[]` | One per requested term | `Duration` = months; `Uplift` and `StandingChargeUplift` = the override for (supplier, term), else the quote default; `PlanType` left out (Q4); `Id` left out |
+| `QuoteDefinitions[].Plans[]` | One per requested term | `Duration` = months; `Uplift` and `StandingChargeUplift` = the override for (supplier, term), else the quote default, each **capped at the supplier's maximum for the fuel** (a blank maximum gives 0; FR-060, FR-062). The requested and applied values are both stored; `PlanType` left out (Q4); `Id` left out |
 | `Settings` | `[{ "key": "ShowNoQuoteReason", "value": "true" }]` | Always sent |
 | `SortByCommission` | `false` | The app sorts for itself |
 | `ElectricSupply` or `GasSupply` | See below | Exactly one |

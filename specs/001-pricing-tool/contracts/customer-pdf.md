@@ -11,7 +11,10 @@ complete allow-list of what can reach a customer. Adding a field means changing 
 3. `/pricechange` shows no change for any selected supplier and term. If any has changed, the agent
    sees "{Supplier, …} have published new prices since you priced. Re-price first."
 4. At least one option is selected, and exactly one selected option is recommended.
-5. Every selected option's `UpliftPolicy` status is `Within` or `Approved`.
+5. Every selected option's applied uplifts are within the per-fuel and supplier maximums **in force
+   now** (`LimitPolicy`, FR-063).
+6. Outside the Development environment, none of the wording the PDF uses is still a placeholder
+   (FR-050). The message names the wording items waiting for compliance approval.
 
 ## `CustomerQuoteDocumentModel`
 
@@ -44,17 +47,21 @@ CustomerQuoteDocumentModel
 │                         VatCclNote (wording)
 ├─ CreditCheck            Text, IsPlaceholder
 ├─ CommissionDisclosure   Text (placeholders filled, see below), IsPlaceholder
-├─ Microbusiness?         Text, IsPlaceholder      (present only when the run's flag is true)
+├─ Microbusiness?         (present only when the run's flag is true; all three items required, FR-047)
+│   ├─ CommissionDisclosure  Text, IsPlaceholder
+│   ├─ DisputeResolution     Text, IsPlaceholder   (the Energy Ombudsman)
+│   └─ CoolingOff            Text, IsPlaceholder
 ├─ Terms                  Text (wording), Url (admin setting), UrlDisplay (full URL printed)
 └─ Agent                  Name, Email, Phone (Graph, else company phone)
 ```
 
-**Not in the model at all**:
+**Not in the model at all** (the agent-only data in FR-100):
 - base rates;
-- uplift values;
+- uplift values, and whether an uplift was capped at a supplier's maximum;
+- annual costs before uplift (`RawBaseAnnualPrice`, `BaseAnnualPrice`);
 - commission figures, except inside `CommissionDisclosure.Text`;
 - the commission basis or payment model;
-- limit or approval status;
+- uplift limits;
 - `ExtraInfo`, `FooterMessage` and `FooterNotes`;
 - POWWR references, pricebook versions and tariff codes;
 - the cross-check figures;
@@ -100,7 +107,12 @@ An unknown `{Name}` is left as it is and logged, and the admin sees it on the wo
    link. The `<a href>` is clickable, and the full URL is printed as the link text.
 
 Any wording item with `IsPlaceholder = true` renders inside a dashed coral-bordered frame headed
-"PLACEHOLDER – NOT APPROVED WORDING" (FR-050).
+"PLACEHOLDER – NOT APPROVED WORDING" (FR-050). This can only happen in the Development environment,
+because pre-condition 6 refuses placeholder PDFs everywhere else.
+
+**Document properties** (FR-048): the HTML `<title>` is `Consultiv Utilities quote {reference}`,
+which becomes the PDF title. No author, subject or keywords are set. Chromium's own creator, producer
+and date fields are allowed.
 
 **Size**: a single site with up to 6 options fits on 1–2 A4 pages (SC-010). Margins are 14 mm, with
 18 mm at the bottom for the footer. The body is 9.5–10 pt Poppins and table figures 9 pt with tabular

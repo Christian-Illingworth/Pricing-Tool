@@ -20,6 +20,7 @@ limits, rates, wording) are admin settings in the database (data-model.md).
 |---|---|---|---|
 | `ConnectionStrings:PricingDb` | `Server=.\SQLEXPRESS;Database=CuPricingTool;Trusted_Connection=True;TrustServerCertificate=True;MultipleActiveResultSets=False` (Development file) | No locally | A password-based connection string later is a secret |
 | `Authentication:Mode` | `Entra`; `Development` in the Development file | No | `Development` is refused outside the Development environment (research R2) |
+| `Authentication:SessionHours` | `8` | No | Absolute lifetime of the sign-in cookie, with no sliding renewal (FR-094) |
 | `AzureAd:Instance` | `https://login.microsoftonline.com/` | No | |
 | `AzureAd:TenantId` | (from IT) | No | Single tenant |
 | `AzureAd:ClientId` | (from IT) | No | |

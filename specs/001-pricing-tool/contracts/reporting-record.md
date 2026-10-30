@@ -19,8 +19,11 @@ The machine-readable schema is [reporting-record.v1.schema.json](reporting-recor
   `display` uses the same `Rounding.ToPennies` as the screen and PDF, so all three match (SC-004).
   POWWR's rate strings are copied exactly in `returned`.
 - **Times and dates**: times are UTC ISO 8601 (`2026-10-30T10:15:04.123Z`). Dates are `yyyy-MM-dd`.
-- **Never in a record**: secrets, tokens, the licence code, POWWR's raw request or response, or the
-  agent's Graph data beyond their name and email.
+- **Never in a record**: secrets, tokens, the licence code, POWWR's raw request or response, the
+  customer's contact name, email address or phone number (FR-084), or the agent's Graph data beyond
+  their name and email.
+- **Commission basis and capping**: `pricingRun.commissionBasis` gives the basis used for every price
+  in the record, and each price and option says whether it was `cappedAtSupplierMax` (FR-084).
 - **Access**: records contain customer and commission data, so they are visible to Admins only in the
   app (FR-088). Access to the export location is restricted in the same way (local folder now, Blob
   later).
@@ -32,8 +35,6 @@ The machine-readable schema is [reporting-record.v1.schema.json](reporting-recor
 | `QuoteRequested` | A quote is first priced (before POWWR is called) | none |
 | `PricesReturned` | The first pricing run completes, fully or partly | `pricingRun` |
 | `Repriced` | Any later run completes, including a retry of failed sites | `pricingRun` |
-| `ApprovalRequested` | An agent asks for approval | `approval` |
-| `ApprovalDecided` | A manager approves or declines | `approval` |
 | `PdfGenerated` | A PDF is stored | `pdf` |
 | `OpenedInOutlook` | A draft is created (Graph) or downloaded (Eml) | `outlook` |
 | `Failed` | A pricing call, a PDF render or an Outlook draft fails | `failure` |
@@ -113,6 +114,7 @@ The machine-readable schema is [reporting-record.v1.schema.json](reporting-recor
         "monthly": { "value": 114.0208333333, "display": 114.02 }
       },
       "outsidePricingWindow": false,
+      "cappedAtSupplierMax": false,
       "pricebookVersion": "MOCK-20261030"
     }
   ],
@@ -121,9 +123,8 @@ The machine-readable schema is [reporting-record.v1.schema.json](reporting-recor
     { "supplier": "EDF", "planType": null, "termMonths": 24, "isPartial": false, "selected": true, "recommended": true,
       "annualCostExVatCcl": { "value": 21892.36, "display": 21892.36 },
       "commissionContractTotal": { "value": 2736.5, "display": 2736.50 },
-      "limitStatus": "Within" }
+      "cappedAtSupplierMax": false }
   ],
-  "approval": null,
   "pdf": { "generated": false, "pdfId": null, "fileName": null },
   "outlook": { "opened": false, "method": null },
   "failure": null
@@ -141,7 +142,7 @@ The CSV has one row per record, with these columns:
 | Quote | `Fuel`, `QuoteType`, `OutOfContract`, `IsMicrobusiness` |
 | Customer and sites | `CustomerName`, `BusinessType`, `CompanyNumber`, `Postcode`, `Regions`, `SiteCount`, `TotalKwh` |
 | Recommended option | `RecommendedSupplier`, `RecommendedTermMonths`, `RecommendedAnnualCostExVatCcl`, `RecommendedCommissionTotal`, `RecommendedCommissionUpfront`, `RecommendedCommissionMonthly` |
-| Outcome | `PdfGenerated`, `OpenedInOutlook`, `ApprovalStatus`, `FailureCategory` |
+| Outcome | `PdfGenerated`, `OpenedInOutlook`, `FailureCategory` |
 
 Money columns use the `display` values. Every cell is escaped against formula injection (research
 R21). The full detail of each record, including every price, is in the exported JSON for Power BI.
