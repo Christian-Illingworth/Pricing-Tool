@@ -21,7 +21,7 @@ Follow this from top to bottom. Every step tells you **where** to type, **what**
 
 Tick each box (change `[ ]` to `[x]`) as you finish it.
 
-- [ ] Step 0: Set up the folder
+- [x ] Step 0: Set up the folder
 - [ ] Step 1: Constitution
 - [ ] Step 2: Specify
 - [ ] Step 3: Clarify
