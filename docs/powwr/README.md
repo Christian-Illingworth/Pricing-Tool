@@ -109,3 +109,5 @@ Rates come back as strings (e.g. `"13.84"`, `"32.00"`): show them as returned. T
 13. Should `mascaradeuser` be the agent's name, their email, or a fixed value?
 14. How do the meter lookup's supplier names and IDs (`powwrId`, MPID) map to the supplier names the Pricing API expects? Is there a list?
 15. For `/prompts`: should `MPANTop` accept the 9-character post-MHHS format, and is `LineLossFactorClass` really 8–9 characters?
+16. Does any Meter Lookup field show that an electricity meter is already switching supplier (as `incomingSupplier` does for gas)? What do the `tradingStatus` values N, R, T and X mean?
+17. Does `LatestPriceChange.Version` from `/pricechange` use the same values as `Rate.PricebookVersion`, so we can tell whether a supplier's prices changed since we priced?

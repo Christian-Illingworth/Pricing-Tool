@@ -1,0 +1,268 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://consultivutilities.com/schemas/pricing-tool/reporting-record/v1",
+  "title": "CU Pricing Tool reporting record",
+  "description": "One quote event. See reporting-record.md. Made-up example data only in this repository.",
+  "type": "object",
+  "required": ["schemaVersion", "recordId", "eventType", "occurredUtc", "agent", "quote", "customer", "contract", "sites", "prices", "noQuotes", "options", "pdf", "outlook"],
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "recordId": { "type": "string", "format": "uuid" },
+    "eventType": { "enum": ["QuoteRequested", "PricesReturned", "Repriced", "ApprovalRequested", "ApprovalDecided", "PdfGenerated", "OpenedInOutlook", "Failed"] },
+    "occurredUtc": { "type": "string", "format": "date-time" },
+    "agent": {
+      "type": "object",
+      "required": ["id", "name", "email"],
+      "properties": { "id": { "type": "integer" }, "name": { "type": "string" }, "email": { "type": "string" } }
+    },
+    "quote": {
+      "type": "object",
+      "required": ["reference", "powwrReferences", "quoteType", "outOfContract", "fuel", "isMicrobusiness"],
+      "properties": {
+        "reference": { "type": "string", "pattern": "^CUQ-\\d{2}-\\d{6}$" },
+        "powwrReferences": { "type": "array", "items": { "type": "string" } },
+        "quoteType": { "enum": ["Renewal", "NewSupplier", "ChangeOfTenancy"] },
+        "outOfContract": { "type": "boolean" },
+        "cotDate": { "type": ["string", "null"], "format": "date" },
+        "fuel": { "enum": ["Electricity", "Gas"] },
+        "isMicrobusiness": { "type": "boolean" },
+        "microbusinessSource": { "enum": ["Consumption", "Declaration", "Both", "None", null] }
+      }
+    },
+    "customer": {
+      "type": "object",
+      "required": ["businessName", "businessType", "postcode"],
+      "properties": {
+        "businessName": { "type": "string" },
+        "businessType": { "enum": ["SoleTrader", "Partnership", "LimitedCompany", "Llp", "Plc", "Charity", "PublicSector"] },
+        "companyNumber": { "type": ["string", "null"] },
+        "postcode": { "type": "string" }
+      }
+    },
+    "contract": {
+      "type": "object",
+      "required": ["startDate", "termsMonths", "paymentMethod", "defaultUplift", "upliftOverrides", "noStandingChargeOnly", "vatCclTreatment", "includeVatCcl"],
+      "properties": {
+        "startDate": { "type": "string", "format": "date" },
+        "termsMonths": { "type": "array", "items": { "enum": [12, 24, 36, 48, 60] }, "minItems": 1 },
+        "paymentMethod": { "type": "string" },
+        "defaultUplift": { "$ref": "#/$defs/upliftPair" },
+        "upliftOverrides": {
+          "type": "array",
+          "items": {
+            "allOf": [{ "$ref": "#/$defs/upliftPair" }],
+            "type": "object",
+            "required": ["supplier", "termMonths"],
+            "properties": { "supplier": { "type": "string" }, "termMonths": { "type": "integer" } }
+          }
+        },
+        "noStandingChargeOnly": { "type": "boolean" },
+        "vatCclTreatment": { "enum": ["Standard", "Qualifying"] },
+        "qualifyingPercent": { "type": ["number", "null"], "minimum": 0, "maximum": 100 },
+        "includeVatCcl": { "type": "boolean" }
+      }
+    },
+    "sites": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["ordinal", "postcode", "consumption", "treatment"],
+        "properties": {
+          "ordinal": { "type": "integer", "minimum": 1 },
+          "postcode": { "type": "string" },
+          "startDate": { "type": ["string", "null"], "format": "date" },
+          "electricity": {
+            "type": ["object", "null"],
+            "required": ["mpanCore", "distributorId", "region", "isHalfHourly", "smartMeter"],
+            "properties": {
+              "mpanTopLine": { "type": ["string", "null"] },
+              "mpanCore": { "type": "string", "pattern": "^\\d{13}$" },
+              "profileClass": { "type": ["integer", "null"] },
+              "meterTimeswitchClass": { "type": ["integer", "null"] },
+              "lineLossFactorClass": { "type": ["string", "null"] },
+              "standardSettlementConfig": { "type": ["string", "null"] },
+              "duosTariffId": { "type": ["string", "null"] },
+              "mhhsMigrated": { "type": ["boolean", "null"] },
+              "distributorId": { "type": "string" },
+              "region": { "type": "string" },
+              "isHalfHourly": { "type": "boolean" },
+              "kvaCapacity": { "type": ["integer", "null"] },
+              "smartMeter": { "type": "boolean" }
+            }
+          },
+          "gas": {
+            "type": ["object", "null"],
+            "required": ["mprn", "smartMeter", "isIgt"],
+            "properties": {
+              "mprn": { "type": "string", "pattern": "^\\d{6,10}$" },
+              "ldz": { "type": ["string", "null"] },
+              "smartMeter": { "type": "boolean" },
+              "isIgt": { "type": "boolean" }
+            }
+          },
+          "consumption": {
+            "type": "object",
+            "required": ["totalKwh"],
+            "properties": {
+              "dayKwh": { "type": ["integer", "null"] },
+              "nightKwh": { "type": ["integer", "null"] },
+              "eveningWeekendKwh": { "type": ["integer", "null"] },
+              "annualQuantityKwh": { "type": ["integer", "null"] },
+              "totalKwh": { "type": "integer", "minimum": 1 }
+            }
+          },
+          "currentSupplier": { "type": ["string", "null"] },
+          "currentRates": {
+            "type": ["object", "null"],
+            "properties": {
+              "dayPencePerKwh": { "type": ["number", "null"] },
+              "nightPencePerKwh": { "type": ["number", "null"] },
+              "eveningWeekendPencePerKwh": { "type": ["number", "null"] },
+              "unitRatePencePerKwh": { "type": ["number", "null"] },
+              "standingChargePencePerDay": { "type": ["number", "null"] }
+            }
+          },
+          "treatment": { "enum": ["Standard", "LowUse", "Qualifying"] }
+        }
+      }
+    },
+    "pricingRun": {
+      "type": ["object", "null"],
+      "properties": {
+        "runNumber": { "type": "integer" },
+        "fetchedUtc": { "type": ["string", "null"], "format": "date-time" },
+        "status": { "enum": ["Succeeded", "Incomplete", "Failed"] },
+        "commissionBasis": { "enum": ["PerYear", "WholeContract"] }
+      }
+    },
+    "prices": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["siteOrdinal", "supplier", "termMonths", "returned", "base", "annualCostExVatCcl", "ccl", "vat", "annualCostIncVatCcl", "commission", "outsidePricingWindow"],
+        "properties": {
+          "siteOrdinal": { "type": "integer" },
+          "supplier": { "type": "string" },
+          "planType": { "type": ["string", "null"] },
+          "termMonths": { "type": "integer" },
+          "returned": { "type": "object", "additionalProperties": { "type": ["string", "null"] } },
+          "base": { "type": "object", "additionalProperties": { "type": ["string", "null"] } },
+          "annualCostExVatCcl": { "$ref": "#/$defs/money" },
+          "ccl": { "$ref": "#/$defs/money" },
+          "vat": { "$ref": "#/$defs/money" },
+          "annualCostIncVatCcl": { "$ref": "#/$defs/money" },
+          "savingExVatCcl": { "oneOf": [{ "$ref": "#/$defs/money" }, { "type": "null" }] },
+          "savingIncVatCcl": { "oneOf": [{ "$ref": "#/$defs/money" }, { "type": "null" }] },
+          "commission": {
+            "type": "object",
+            "required": ["powwr", "contractTotal", "upfront", "monthly"],
+            "properties": {
+              "powwr": { "$ref": "#/$defs/money" },
+              "contractTotal": { "$ref": "#/$defs/money" },
+              "upfront": { "$ref": "#/$defs/money" },
+              "monthly": { "$ref": "#/$defs/money" }
+            }
+          },
+          "outsidePricingWindow": { "type": "boolean" },
+          "pricebookVersion": { "type": ["string", "null"] }
+        }
+      }
+    },
+    "noQuotes": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["siteOrdinal", "supplier", "reason"],
+        "properties": {
+          "siteOrdinal": { "type": "integer" },
+          "supplier": { "type": "string" },
+          "termMonths": { "type": ["integer", "null"] },
+          "reason": { "type": "string" }
+        }
+      }
+    },
+    "options": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["supplier", "termMonths", "isPartial", "selected", "recommended", "annualCostExVatCcl", "commissionContractTotal", "limitStatus"],
+        "properties": {
+          "supplier": { "type": "string" },
+          "planType": { "type": ["string", "null"] },
+          "termMonths": { "type": "integer" },
+          "isPartial": { "type": "boolean" },
+          "selected": { "type": "boolean" },
+          "recommended": { "type": "boolean" },
+          "annualCostExVatCcl": { "$ref": "#/$defs/money" },
+          "commissionContractTotal": { "$ref": "#/$defs/money" },
+          "limitStatus": { "enum": ["Within", "NeedsApproval", "AwaitingApproval", "Approved", "Declined", "AboveSupplierMax"] }
+        }
+      }
+    },
+    "approval": {
+      "type": ["object", "null"],
+      "properties": {
+        "requestId": { "type": "integer" },
+        "status": { "enum": ["Pending", "Approved", "Declined"] },
+        "reason": { "type": "string" },
+        "requestedBy": { "type": "string" },
+        "decidedBy": { "type": ["string", "null"] },
+        "decidedUtc": { "type": ["string", "null"], "format": "date-time" },
+        "comment": { "type": ["string", "null"] },
+        "items": {
+          "type": "array",
+          "items": {
+            "allOf": [{ "$ref": "#/$defs/upliftPair" }],
+            "type": "object",
+            "required": ["supplier", "termMonths"],
+            "properties": { "supplier": { "type": "string" }, "termMonths": { "type": "integer" } }
+          }
+        }
+      }
+    },
+    "pdf": {
+      "type": "object",
+      "required": ["generated"],
+      "properties": {
+        "generated": { "type": "boolean" },
+        "pdfId": { "type": ["integer", "null"] },
+        "fileName": { "type": ["string", "null"] }
+      }
+    },
+    "outlook": {
+      "type": "object",
+      "required": ["opened"],
+      "properties": {
+        "opened": { "type": "boolean" },
+        "method": { "enum": ["Graph", "Eml", null] }
+      }
+    },
+    "failure": {
+      "type": ["object", "null"],
+      "properties": {
+        "stage": { "enum": ["Pricing", "Pdf", "Outlook"] },
+        "category": { "type": "string" },
+        "message": { "type": "string" }
+      }
+    }
+  },
+  "$defs": {
+    "money": {
+      "type": "object",
+      "required": ["value", "display"],
+      "properties": {
+        "value": { "type": "number", "description": "Full precision from the pricing engine" },
+        "display": { "type": "number", "description": "Rounded to pennies with Rounding.ToPennies (half away from zero)" }
+      }
+    },
+    "upliftPair": {
+      "type": "object",
+      "required": ["unitRatePencePerKwh", "standingChargePencePerDay"],
+      "properties": {
+        "unitRatePencePerKwh": { "type": "number", "minimum": 0 },
+        "standingChargePencePerDay": { "type": "number", "minimum": 0 }
+      }
+    }
+  }
+}
