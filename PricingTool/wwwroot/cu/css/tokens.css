@@ -1,0 +1,167 @@
+/* Consultiv Utilities web design kit: design tokens.
+   Taken from Triage (ConsultivUtilities/Triage, wwwroot/dashboard.css) on 2026-10-27.
+   This is the only file that defines a colour, size or timing. base.css and components.css only
+   refer to these. DESIGN.md explains the rules behind them; read it before adding anything. */
+
+:root {
+  /* ── Brand palette (CU Colours) ──
+     Use these exact hexes. Never a darker or lighter shade of one: if a colour fails contrast
+     as text, put it on a mark (dot, bar, border) beside navy text instead. */
+  --navy:      #2B3F47;
+  --teal:      #02708B;
+  --cyan:      #4AC0E5;
+  --coral:     #EB5F5E; /* also the SME segment colour */
+  --green:     #31AF87; /* also the Corporate segment colour */
+  --gray:      #C6C6C5;
+  --lightblue: #B7E1F4;
+  --white:     #FFFFFF;
+  /* Portal palette: extra brand shades for when statuses or chart series need more hues. */
+  --midteal:   #3D9BB8;
+  --sage:      #8BC9AD;
+  --deepteal:  #318487;
+  --darkgray:  #7B7B7A;
+  /* The one agreed exception: the brand has no warning colour. Warnings only. */
+  --amber:     #F3943E;
+
+  /* ── Tints ──
+     Translucent versions of the exact brand hex, for chip and panel backgrounds. Never a new hex. */
+  --navy-bg:      rgba(43,63,71,0.10);
+  --teal-bg:      rgba(2,112,139,0.10);
+  --cyan-bg:      rgba(74,192,229,0.16);
+  --coral-bg:     rgba(235,95,94,0.14);
+  --green-bg:     rgba(49,175,135,0.16);
+  --gray-bg:      rgba(198,198,197,0.30);
+  --lightblue-bg: rgba(183,225,244,0.45);
+  --midteal-bg:   rgba(61,155,184,0.14);
+  --sage-bg:      rgba(139,201,173,0.22);
+  --deepteal-bg:  rgba(49,132,135,0.14);
+  --darkgray-bg:  rgba(123,123,122,0.14);
+  --amber-bg:     rgba(243,148,62,0.18);
+
+  /* ── Surfaces and borders ──
+     Tints of brand light blue and navy over white, so there are no neutral greys of our own.
+     --bg-solid is the same tint made opaque, for sticky headers and panels that sit on top of
+     other tinted surfaces. */
+  --bg:          rgba(183,225,244,0.22);
+  --bg-solid:    linear-gradient(rgba(183,225,244,0.22), rgba(183,225,244,0.22)), #FFFFFF;
+  --surf:        #FFFFFF;
+  --tint-hover:  rgba(183,225,244,0.45);
+  --tint-press:  rgba(183,225,244,0.75);
+  --bdr:         rgba(43,63,71,0.14);
+  --bdr2:        rgba(43,63,71,0.30);
+  --track:       rgba(43,63,71,0.06);  /* empty part of a bar or ring */
+
+  /* ── Text ──
+     Always brand navy; secondary levels are navy at reduced opacity (same hue, no new greys).
+     --txt3 must stay at or above 4.5:1 on --surf and the tinted surfaces (WCAG AA). */
+  --txt:          var(--navy);
+  --txt2:         rgba(43,63,71,0.86);
+  --txt3:         rgba(43,63,71,0.75);
+  --txt-disabled: rgba(43,63,71,0.45); /* decorative marks only, never words someone must read */
+
+  /* ── On dark chrome (the navy sidebar) ── */
+  --on-dark:        #FFFFFF;
+  --on-dark-2:      rgba(255,255,255,0.86);
+  --on-dark-3:      rgba(255,255,255,0.75);
+  --on-dark-hover:  rgba(255,255,255,0.07);
+  --on-dark-press:  rgba(255,255,255,0.12);
+  --on-dark-line:   rgba(255,255,255,0.12);
+  --on-dark-border: rgba(255,255,255,0.30);
+  --on-dark-active: rgba(74,192,229,0.18);
+
+  /* ── Meaning ──
+     The text that goes with any brand colour is navy; the colour itself goes on a mark. */
+  --good:  var(--green);
+  --bad:   var(--coral);
+  --watch: var(--amber);
+  --note:     var(--navy);  --note-bg: rgba(243,148,62,0.10);  --note-bdr: var(--amber);
+  --ai:       var(--navy);  --ai-bg:   var(--lightblue-bg);
+
+  /* Priority: Low and Medium are plain (the signal glyph says which); High and Urgent keep a
+     tint so they still stand out. -fill colours the glyph and menu dots. */
+  --prio-low-bg: var(--surf);        --prio-low-bdr: var(--bdr2);    --prio-low-fill: var(--gray);
+  --prio-med-bg: var(--surf);        --prio-med-bdr: var(--bdr2);    --prio-med-fill: var(--teal);
+  --prio-high-bg: var(--amber-bg);   --prio-high-bdr: var(--amber);  --prio-high-fill: var(--amber);
+  --prio-urgent-bg: var(--coral-bg); --prio-urgent-bdr: var(--coral); --prio-urgent-fill: var(--coral);
+
+  /* Chart series, in order. Coral and amber are kept back for "bad" and "watch". */
+  --series-1: var(--teal);
+  --series-2: var(--cyan);
+  --series-3: var(--navy);
+  --series-4: var(--green);
+  --series-5: var(--lightblue);
+  --series-6: var(--gray);
+  --series-7: var(--midteal);
+  --series-8: var(--sage);
+  --series-9: var(--deepteal);
+  --series-10: var(--darkgray);
+
+  /* ── Focus ── teal, not cyan: a focus indicator needs 3:1 against white. */
+  --focus-ring: 0 0 0 2px var(--surf), 0 0 0 4px var(--teal);
+  --focus-ring-dark: inset 0 0 0 2px var(--cyan); /* on the navy sidebar */
+  --input-ring: 0 0 0 3px rgba(2,112,139,0.11);
+
+  /* ── Elevation ── navy-tinted, soft and layered. Never a heavy black drop shadow. */
+  --sh-sm: 0 1px 2px rgba(27,44,53,0.04), 0 3px 12px rgba(27,44,53,0.07), 0 0 0 1px rgba(27,44,53,0.025);
+  --sh-md: 0 2px 4px rgba(27,44,53,0.04), 0 10px 30px rgba(27,44,53,0.10), 0 0 0 1px rgba(27,44,53,0.03);
+  --sh-lg: 0 6px 12px rgba(27,44,53,0.06), 0 22px 50px rgba(27,44,53,0.14), 0 0 0 1px rgba(27,44,53,0.04);
+  --sh-toast: 0 4px 16px rgba(27,44,53,0.22);
+  --overlay: rgba(27,44,53,0.45);
+
+  /* ── Shape ── */
+  --rsm:  7px;   /* inputs, buttons, small cards, menu items */
+  --r:    10px;  /* cards, tiles */
+  --r-lg: 16px;  /* dialogs */
+  --r-pill: 999px;
+
+  /* ── Type ──
+     Poppins, self-hosted. The floor is 11px, and only for uppercase micro-labels; anything
+     someone reads properly is 13px or more. */
+  --font: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --fs-2xs:  11px;
+  --fs-xs:   12px;
+  --fs-sm:   13px;
+  --fs-base: 14px;
+  --fs-md:   15px;
+  --fs-lg:   17px;
+  --fs-xl:   22px;
+  --fs-stat: 36px;
+  --fs-hero: 44px;
+  --fw-regular:  400;
+  --fw-medium:   500;
+  --fw-semibold: 600;
+  --fw-bold:     700;
+  --fw-black:    800;
+
+  /* ── Spacing (4px grid) ── */
+  --sp-1: 4px;
+  --sp-2: 8px;
+  --sp-3: 12px;
+  --sp-4: 16px;
+  --sp-5: 20px;
+  --sp-6: 24px;
+  --sp-7: 32px;
+  --sp-8: 40px;
+
+  /* ── Icons ── */
+  --icon-sm: 14px;
+  --icon-md: 18px;
+
+  /* ── Motion ── short and quiet. Panels and tabs use the premium curve. */
+  --ease:         0.18s ease;
+  --ease-premium: cubic-bezier(0.16, 1, 0.3, 1);
+  --dur-med:      0.28s;
+
+  /* ── Layout ── */
+  --sidebar-w: 232px;
+  --rail-w:    64px;
+  --topbar-h:  56px;
+
+  /* ── Layers ── */
+  --z-sticky:   10;
+  --z-dropdown: 200;
+  --z-menu:     500;
+  --z-modal:    600;
+  --z-flyout:   700;
+  --z-toast:    1000;
+}

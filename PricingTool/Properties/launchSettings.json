@@ -1,0 +1,11 @@
+{
+  "profiles": {
+    "PricingTool": {
+      "commandName": "Project",
+      "applicationUrl": "https://localhost:8101;http://localhost:8100",
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development"
+      }
+    }
+  }
+}

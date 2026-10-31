@@ -481,3 +481,9 @@ $RECYCLE.BIN/
 # Vim temporary swap files
 *.swp
 .claude/settings.local.json
+
+# CU Pricing Tool: locally generated PDFs and reporting exports, Outlook .eml drafts,
+# and Playwright MCP screenshots/snapshots. Never committed (constitution: data in development).
+PricingTool/App_Data/
+.playwright-mcp/
+*.eml

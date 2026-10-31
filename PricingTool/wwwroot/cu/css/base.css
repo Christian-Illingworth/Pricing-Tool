@@ -1,0 +1,117 @@
+/* Consultiv Utilities web design kit: base styles.
+   Font, reset, typography, focus, motion and small utilities. Needs tokens.css first. */
+
+/* Self-hosted Poppins (OFL-licensed, latin subset; licence in fonts/OFL.txt). Preload the 700
+   weight in <head> (see README) so headings and big numbers don't swap in late. */
+@font-face { font-family: 'Poppins'; font-style: normal; font-weight: 400; font-display: swap;
+  src: url('../fonts/poppins-400.woff2') format('woff2'); }
+@font-face { font-family: 'Poppins'; font-style: normal; font-weight: 500; font-display: swap;
+  src: url('../fonts/poppins-500.woff2') format('woff2'); }
+@font-face { font-family: 'Poppins'; font-style: normal; font-weight: 600; font-display: swap;
+  src: url('../fonts/poppins-600.woff2') format('woff2'); }
+@font-face { font-family: 'Poppins'; font-style: normal; font-weight: 700; font-display: swap;
+  src: url('../fonts/poppins-700.woff2') format('woff2'); }
+@font-face { font-family: 'Poppins'; font-style: normal; font-weight: 800; font-display: swap;
+  src: url('../fonts/poppins-800.woff2') format('woff2'); }
+
+/* ── Reset ── */
+*, *::before, *::after { box-sizing: border-box; }
+body, h1, h2, h3, h4, h5, h6, p, figure, blockquote, dl, dd { margin: 0; }
+ul[class], ol[class] { list-style: none; margin: 0; padding: 0; }
+button, input, select, textarea { font-family: inherit; color: inherit; }
+img, svg { flex-shrink: 0; }
+
+/* The page tint is translucent, so it needs white underneath it. */
+html { background: var(--white); }
+body {
+  font-family: var(--font);
+  font-size: var(--fs-base);
+  color: var(--txt);
+  background: var(--bg);
+  -webkit-font-smoothing: antialiased;
+  min-height: 100vh;
+}
+
+a { color: var(--teal); } /* never the browser's default link blue */
+a:hover { color: var(--navy); }
+
+/* ── Type ── */
+.title-xl { font-size: var(--fs-xl); font-weight: var(--fw-bold); letter-spacing: -0.3px; line-height: 1.25; color: var(--txt); }
+.title-lg { font-size: var(--fs-lg); font-weight: var(--fw-bold); line-height: 1.3; color: var(--txt); }
+.title-md { font-size: var(--fs-md); font-weight: var(--fw-bold); line-height: 1.35; color: var(--txt); }
+.body-sm  { font-size: var(--fs-sm); line-height: 1.6; }
+/* Uppercase micro-label: sits above a value or a group of controls. */
+.eyebrow {
+  display: block; font-size: var(--fs-2xs); font-weight: var(--fw-bold); letter-spacing: 0.8px;
+  text-transform: uppercase; color: var(--txt3);
+}
+/* A card's section heading: uppercase with a rule beneath. */
+.section-heading {
+  font-size: var(--fs-2xs); font-weight: var(--fw-bold); color: var(--txt2); text-transform: uppercase;
+  letter-spacing: 0.9px; margin-bottom: var(--sp-4); padding-bottom: var(--sp-3); border-bottom: 1px solid var(--bdr);
+}
+.num, .tnum { font-variant-numeric: tabular-nums; }
+
+/* Label and value pairs, e.g. a record's details. */
+.meta-row  { display: flex; gap: var(--sp-7); flex-wrap: wrap; align-items: flex-start; }
+.meta-item { display: flex; flex-direction: column; }
+.meta-label { font-size: var(--fs-2xs); color: var(--txt3); text-transform: uppercase;
+  letter-spacing: 0.7px; font-weight: var(--fw-bold); display: block; margin-bottom: 3px; }
+.meta-value { font-size: var(--fs-sm); font-weight: var(--fw-medium); color: var(--txt); }
+
+/* Running text from users or emails: paragraphs keep their shape without full blank lines. */
+.prose { font-size: var(--fs-sm); color: var(--txt); line-height: 1.6; max-width: 76ch; overflow-wrap: anywhere; }
+.prose p { margin: 0; }
+.prose p + p { margin-top: 0.6em; }
+.prose ul, .prose ol { margin: 0.6em 0; padding-left: 22px; }
+
+/* ── Keyboard focus ── one visible ring for everything focusable; mouse clicks don't show it.
+   The ring follows each element's own corners, so pills keep a round ring. */
+:focus { outline: none; }
+:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+a:focus-visible { border-radius: 3px; }
+
+/* ── Motion ──
+   The `to` frames deliberately leave out `transform`. With fill-mode `both`, a transform kept in
+   the last keyframe stays applied forever and turns the element into a stacking context, which
+   traps dropdowns (z-index) underneath overlays. Leaving it out animates to `none` instead. */
+@keyframes cu-fade-up   { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; } }
+@keyframes cu-fade-in   { from { opacity: 0; } to { opacity: 1; } }
+@keyframes cu-tab-in    { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; } }
+@keyframes cu-drop-in   { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; } }
+@keyframes cu-overlay-in  { from { opacity: 0; } to { opacity: 1; } }
+@keyframes cu-overlay-out { from { opacity: 1; } to { opacity: 0; } }
+@keyframes cu-modal-in  { from { opacity: 0; transform: scale(0.97) translateY(6px); } to { opacity: 1; } }
+/* Safe to end on a transform: the panel leaves the layout straight after. */
+@keyframes cu-modal-out { from { opacity: 1; } to { opacity: 0; transform: scale(0.97) translateY(6px); } }
+@keyframes cu-drawer-in { from { transform: translateX(24px); opacity: 0; } to { opacity: 1; } }
+@keyframes cu-spin      { to { transform: rotate(360deg); } }
+@keyframes cu-shimmer   { 0% { background-position: -200px 0; } 100% { background-position: calc(200px + 100%) 0; } }
+@keyframes cu-slide     { from { transform: translateX(-100%); } to { transform: translateX(300%); } }
+
+.fade-up { animation: cu-fade-up 0.4s ease both; }
+.fade-in { animation: cu-fade-in 0.35s ease both; }
+
+/* ── Utilities ── */
+.visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.muted  { color: var(--txt3); }
+.nowrap { white-space: nowrap; }
+.truncate { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.thin-scroll { scrollbar-width: thin; scrollbar-color: var(--bdr2) transparent; }
+.thin-scroll::-webkit-scrollbar { width: 8px; height: 8px; }
+.thin-scroll::-webkit-scrollbar-track { background: transparent; }
+.thin-scroll::-webkit-scrollbar-thumb { background: var(--bdr2); border-radius: 4px; }
+.thin-scroll::-webkit-scrollbar-thumb:hover { background: var(--txt3); }
+[hidden] { display: none !important; }
+/* Desk-only extras (Export, keyboard hints) that would crowd a phone. */
+@media (max-width: 720px) { .hide-phone { display: none !important; } }
+
+/* Line icons: one set (Lucide / Feather), 24×24 viewBox, currentColor, 2px stroke, round caps. */
+.icon { width: var(--icon-sm); height: var(--icon-sm); vertical-align: -2px; }
+.icon-md { width: var(--icon-md); height: var(--icon-md); }
+
+/* Reduced motion: the kit's components add themselves to this in components.css. */
+@media (prefers-reduced-motion: reduce) {
+  .fade-up, .fade-in { animation: none; }
+  html { scroll-behavior: auto; }
+}

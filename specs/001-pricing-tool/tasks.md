@@ -52,7 +52,7 @@ These follow plan.md, Triage-style: one web project and one test project at the 
 **Purpose**: create the solution, packages, configuration and design kit, so the empty app builds
 and runs.
 
-- [ ] T001 Create the solution as in plan.md "Project Structure":
+- [X] T001 Create the solution as in plan.md "Project Structure":
   - `PricingTool.slnx`.
   - `PricingTool/PricingTool.csproj`:
     - `Microsoft.NET.Sdk.Web`, `net10.0`, `<Nullable>enable</Nullable>`, `<ImplicitUsings>enable</ImplicitUsings>`;
@@ -63,21 +63,21 @@ and runs.
     - packages `xunit` 2.9.3, `xunit.runner.visualstudio`, `Microsoft.NET.Test.Sdk`, `coverlet.collector`, `Microsoft.AspNetCore.Mvc.Testing`;
     - `<Using Include="Xunit" />`;
     - a project reference to `PricingTool`.
-- [ ] T002 Add the runtime packages to `PricingTool/PricingTool.csproj`, each pinned to the latest stable version that supports `net10.0`: `Microsoft.EntityFrameworkCore.SqlServer`, `Microsoft.EntityFrameworkCore.Design`, `Microsoft.Identity.Web`, `Microsoft.Playwright` and `DocumentFormat.OpenXml`. Add no other packages (plan.md "Packages"). There's no Microsoft.Graph SDK, FluentValidation, CsvHelper, MimeKit, Polly or Identity.Web.UI.
-- [ ] T003 [P] Create `NuGet.config` (nuget.org only, as in Triage) and `.config/dotnet-tools.json` with the local tools `dotnet-ef` and `PowerShell` (research R26), so `dotnet tool restore` provides `dotnet ef` and `dotnet pwsh`.
-- [ ] T004 [P] Add `PricingTool/App_Data/` (local PDFs and reporting exports), `.playwright-mcp/` and `*.eml` to `.gitignore`. Check that `bin/`, `obj/`, `.vs/` and `.claude/settings.local.json` are still ignored.
-- [ ] T005 [P] Copy the `css/`, `js/`, `fonts/` and `logo/` folders **unchanged** from `C:\Users\ChristianIllingworth\Projects\Consultiv-Utilities-Brand\cu-web-design-kit\cu-web-design-kit\` into `PricingTool/wwwroot/cu/`, keeping them together (`base.css` loads `../fonts/`). Don't copy `index.html`, `standalone.html` or the Markdown files.
-- [ ] T006 [P] Create `PricingTool/Properties/launchSettings.json` (`https://localhost:8101;http://localhost:8100`, `ASPNETCORE_ENVIRONMENT=Development`), plus `PricingTool/appsettings.json` and `PricingTool/appsettings.Development.json` with every key in [contracts/configuration.md](contracts/configuration.md):
+- [X] T002 Add the runtime packages to `PricingTool/PricingTool.csproj`, each pinned to the latest stable version that supports `net10.0`: `Microsoft.EntityFrameworkCore.SqlServer`, `Microsoft.EntityFrameworkCore.Design`, `Microsoft.Identity.Web`, `Microsoft.Playwright` and `DocumentFormat.OpenXml`. Add no other packages (plan.md "Packages"). There's no Microsoft.Graph SDK, FluentValidation, CsvHelper, MimeKit, Polly or Identity.Web.UI.
+- [X] T003 [P] Create `NuGet.config` (nuget.org only, as in Triage) and `.config/dotnet-tools.json` with the local tools `dotnet-ef` and `PowerShell` (research R26), so `dotnet tool restore` provides `dotnet ef` and `dotnet pwsh`.
+- [X] T004 [P] Add `PricingTool/App_Data/` (local PDFs and reporting exports), `.playwright-mcp/` and `*.eml` to `.gitignore`. Check that `bin/`, `obj/`, `.vs/` and `.claude/settings.local.json` are still ignored.
+- [X] T005 [P] Copy the `css/`, `js/`, `fonts/` and `logo/` folders **unchanged** from `C:\Users\ChristianIllingworth\Projects\Consultiv-Utilities-Brand\cu-web-design-kit\cu-web-design-kit\` into `PricingTool/wwwroot/cu/`, keeping them together (`base.css` loads `../fonts/`). Don't copy `index.html`, `standalone.html` or the Markdown files.
+- [X] T006 [P] Create `PricingTool/Properties/launchSettings.json` (`https://localhost:8101;http://localhost:8100`, `ASPNETCORE_ENVIRONMENT=Development`), plus `PricingTool/appsettings.json` and `PricingTool/appsettings.Development.json` with every key in [contracts/configuration.md](contracts/configuration.md):
   - `appsettings.json` holds safe defaults: `Powwr:Pricing:Mode=Mock`, `Powwr:MeterLookup:Mode=Mock`, `Authentication:Mode=Entra`, `Authentication:SessionHours=8`, `Outlook:Mode=Graph`, `Storage:Files:LocalRoot=App_Data/files`, `Storage:ReportingExport:LocalRoot=App_Data/reporting`, and `Company:*` placeholders marked "to confirm".
   - The Development file has the `.\SQLEXPRESS` `CuPricingTool` connection string (Windows sign-in), `Authentication:Mode=Development` and `Outlook:Mode=Eml`.
   - No secrets in either file.
-- [ ] T007 Create the options classes in `PricingTool/Options/`: `AuthenticationOptions`, `PowwrPricingOptions`, `MeterLookupOptions`, `OutlookOptions`, `StorageOptions`, `CompanyOptions`, `RetentionOptions`, `PdfOptions`, `UploadOptions`, `ReportingOptions`. Bind each with `ValidateOnStart()`. In `Live`/`Sandbox` modes, a missing secret fails startup with a message naming the **key**, never a value. Then write the minimal `PricingTool/Program.cs`:
+- [X] T007 Create the options classes in `PricingTool/Options/`: `AuthenticationOptions`, `PowwrPricingOptions`, `MeterLookupOptions`, `OutlookOptions`, `StorageOptions`, `CompanyOptions`, `RetentionOptions`, `PdfOptions`, `UploadOptions`, `ReportingOptions`. Bind each with `ValidateOnStart()`. In `Live`/`Sandbox` modes, a missing secret fails startup with a message naming the **key**, never a value. Then write the minimal `PricingTool/Program.cs`:
   - `AddRazorPages`, standard structured logging, `UseExceptionHandler("/Error")` and HSTS outside Development;
   - HTTPS redirection, static files, routing;
   - `TimeProvider.System` registered as a singleton;
   - **no database access at startup**.
-- [ ] T008 [P] Replace the placeholder "Commands" section of `CLAUDE.md` with `dotnet build`, `dotnet test`, `dotnet run --project PricingTool` and `dotnet ef database update --project PricingTool`. Create a `README.md` skeleton covering prerequisites (the .NET 10 SDK and SQL Server Express only), then `dotnet tool restore`, `dotnet dev-certs https --trust`, `dotnet build`, `dotnet pwsh PricingTool/bin/Debug/net10.0/playwright.ps1 install chromium`, `dotnet ef database update --project PricingTool` and `dotnet run --project PricingTool`.
-- [ ] T009 [P] Create `THIRD-PARTY-NOTICES.md` with the Lucide icons (ISC) and Poppins (SIL OFL, from `wwwroot/cu/fonts/OFL.txt`).
+- [X] T008 [P] Replace the placeholder "Commands" section of `CLAUDE.md` with `dotnet build`, `dotnet test`, `dotnet run --project PricingTool` and `dotnet ef database update --project PricingTool`. Create a `README.md` skeleton covering prerequisites (the .NET 10 SDK and SQL Server Express only), then `dotnet tool restore`, `dotnet dev-certs https --trust`, `dotnet build`, `dotnet pwsh PricingTool/bin/Debug/net10.0/playwright.ps1 install chromium`, `dotnet ef database update --project PricingTool` and `dotnet run --project PricingTool`.
+- [X] T009 [P] Create `THIRD-PARTY-NOTICES.md` with the Lucide icons (ISC) and Poppins (SIL OFL, from `wwwroot/cu/fonts/OFL.txt`).
 
 **Checkpoint**: `dotnet build` and `dotnet test` succeed with an empty test project, and the app starts on `https://localhost:8101`.
 
@@ -92,64 +92,64 @@ adapters with mocks, **the pricing engine**, and the reporting recorder. Every u
 
 ### Time and domain types
 
-- [ ] T010 [P] Create `PricingTool/Services/Time/UkCalendar.cs`, with `Today(TimeProvider)` and `DateOf(DateTime utc)` on `Europe/London` (fallback "GMT Standard Time"), and `PricingTool.Tests/Support/FakeTimeProvider.cs`, a small `TimeProvider` subclass with a settable now. Add `PricingTool.Tests/Time/UkCalendarTests.cs` covering UK midnight and both British Summer Time changes (research R14).
-- [ ] T011 [P] Create the domain enums in `PricingTool/Domain/Enums.cs`, stored as strings by EF, with the exact members listed in data-model.md:
+- [X] T010 [P] Create `PricingTool/Services/Time/UkCalendar.cs`, with `Today(TimeProvider)` and `DateOf(DateTime utc)` on `Europe/London` (fallback "GMT Standard Time"), and `PricingTool.Tests/Support/FakeTimeProvider.cs`, a small `TimeProvider` subclass with a settable now. Add `PricingTool.Tests/Time/UkCalendarTests.cs` covering UK midnight and both British Summer Time changes (research R14).
+- [X] T011 [P] Create the domain enums in `PricingTool/Domain/Enums.cs`, stored as strings by EF, with the exact members listed in data-model.md:
   - **Quote and customer**: `Fuel`, `QuoteType` (Renewal, NewSupplier, ChangeOfTenancy), `BusinessType` (SoleTrader, Partnership, LimitedCompany, Llp, Plc, Charity, PublicSector), `PaymentMethod` (DirectDebit, Bacs, CashCheque), `PaymentFrequency`, `PaymentAmount`, `SupplierFilterMode`, `QuoteStatus` (Draft, Priced, Quoted).
   - **Pricing**: `VatCclTreatment` (Standard, Qualifying), `SiteTreatment` (Standard, LowUse, Qualifying), `ConsumptionEntryMode`, `ForcedRateStructure` (Standard, Economy7, EveningAndWeekend, EveningWeekendAndNight, OffPeak), `Register` (Day, Night, Wend), `PricingRunStatus` (Succeeded, Incomplete, Failed), `PricingRunSiteStatus` (Succeeded, Failed, NotPriced), `ErrorCategory` (Timeout, RateLimited, PowwrError, InvalidResponse, Network, CredentialsRejected), `CommissionBasis` (PerYear, WholeContract), `MicrobusinessSource` (Consumption, Declaration, Both, None).
   - **Outputs and settings**: `DraftMethod` (Graph, Eml), `ReportingEventType` (QuoteRequested, PricesReturned, Repriced, PdfGenerated, OpenedInOutlook, Failed), `EffectiveRateKind`, `SiteWarningCode` (Domestic, DeEnergised, GreenDealActive, SwitchInProgress, Igt, LargeGasSite, MhhsNoSsc, SupplierNotMapped), `FieldSource` (Lookup, Agent, AgentChanged).
 
 ### Validation (tests first)
 
-- [ ] T012 [P] Write `PricingTool.Tests/Validation/MpanCoreTests.cs`:
+- [X] T012 [P] Write `PricingTool.Tests/Validation/MpanCoreTests.cs`:
   - The core must be exactly 13 digits.
   - The check digit is (Σ dᵢ×pᵢ for the first 12 digits, primes 3, 5, 7, 13, 17, 19, 23, 29, 31, 37, 41, 43) mod 11 mod 10.
   - POWWR's examples `1610028163273` and `1620000546231` and the mock cores `1600000001013`, `1200000000011` and `2300000000019` are valid; `1600000001014` is invalid.
   - Distributor IDs 10–23 map to the named regions in research R15, 24–99 to "Independent network (IDNO)", and 00–09 are invalid.
-- [ ] T013 [P] Write `PricingTool.Tests/Validation/MpanTopLineTests.cs`:
+- [X] T013 [P] Write `PricingTool.Tests/Validation/MpanTopLineTests.cs`:
   - A legacy 8-digit top line is PC(2) + MTC(3) + LLFC(3).
   - A 9-character MHHS top line is PC(2) + SSC(4) + DUoS tariff ID(3). POWWR's example `040151661` gives PC 04, SSC `0151` and DUoS `661`, and sets `MhhsMigrated = true`.
   - The top line must agree with the individual fields (spec FR-015, FR-016, edge case "MPAN top line and individual fields disagree").
-- [ ] T014 [P] Write `PricingTool.Tests/Validation/FieldFormatTests.cs`:
+- [X] T014 [P] Write `PricingTool.Tests/Validation/FieldFormatTests.cs`:
   - **MPRN**: digits only, 6–10 long.
   - **Postcode**: `Postcode.Normalise` uppercases, strips spaces, checks `^[A-Z]{1,2}[0-9][A-Z0-9]?[0-9][A-Z]{2}$`, and inserts one space, so `zz11aa` becomes `ZZ1 1AA`.
   - **Company number**: only for LimitedCompany, Llp and Plc; 8 digits, or 2 letters + 6 digits.
   - **UK phone**: `^(\+44|0)\d{9,10}$` after removing spaces.
   - **Email**: a valid address with a dotted domain.
-- [ ] T015 [P] Write `PricingTool.Tests/Validation/RegisterSplitTests.cs`: a total with a percentage split must total exactly 100%, and the per-register kWh uses the largest-remainder method so it adds up to the total (FR-022, R15).
-- [ ] T016 Implement the value types and validators so T012–T015 pass:
+- [X] T015 [P] Write `PricingTool.Tests/Validation/RegisterSplitTests.cs`: a total with a percentage split must total exactly 100%, and the per-register kWh uses the largest-remainder method so it adds up to the total (FR-022, R15).
+- [X] T016 Implement the value types and validators so T012–T015 pass:
   - `PricingTool/Domain/MpanCore.cs`, with the region lookup;
   - `PricingTool/Domain/MpanTopLine.cs`, with the single `Parse` method that holds the 9-character layout (open item P-10);
   - `PricingTool/Domain/Mprn.cs` and `PricingTool/Domain/NormalisedPostcode.cs`;
   - `PricingTool/Services/Validation/Postcode.cs`, `CompanyNumber.cs`, `UkPhone.cs`, `EmailAddress.cs` and `RegisterSplit.cs`.
-- [ ] T017 [P] Write `PricingTool.Tests/Validation/QuoteInputValidatorTests.cs`:
+- [X] T017 [P] Write `PricingTool.Tests/Validation/QuoteInputValidatorTests.cs`:
   - field-keyed errors for each rule in data-model.md "Validation rules by requirement", for FR-005 to FR-007, FR-012 (a domestic meter needs confirmation), FR-013 (change of tenancy needs `CotDate`), FR-015 to FR-018 (half-hourly needs kVA > 0), FR-022, FR-024 (start date not before today in UK time; at least one term from {12, 24, 36, 48, 60}), FR-025 (uplifts ≥ 0, at most 4 decimal places), FR-029 (a qualifying percentage of 0–100 when Qualifying) and FR-043;
   - valid input gives no errors.
-- [ ] T018 Implement the input models (`QuoteInput`, `CustomerInput`, `SiteInput`, `MeterInput`, `ContractInput`) in `PricingTool/Services/Validation/QuoteInput.cs`, and `QuoteInputValidator` in `PricingTool/Services/Validation/QuoteInputValidator.cs`. It returns a dictionary of field path → messages, so that T017 passes. It is the single validator used by the form, the services (as a guard) and upload rows.
+- [X] T018 Implement the input models (`QuoteInput`, `CustomerInput`, `SiteInput`, `MeterInput`, `ContractInput`) in `PricingTool/Services/Validation/QuoteInput.cs`, and `QuoteInputValidator` in `PricingTool/Services/Validation/QuoteInputValidator.cs`. It returns a dictionary of field path → messages, so that T017 passes. It is the single validator used by the form, the services (as a guard) and upload rows.
 
 ### Database
 
-- [ ] T019 [P] Create the quote entities in `PricingTool/Data/Entities/`: `StaffMember.cs`, `Quote.cs` (with owned `Customer` and `Contract`), `Site.cs` (with an owned `Meter`) and `QuoteUpliftOverride.cs`, with the fields, types, lengths and nullability in data-model.md:
+- [X] T019 [P] Create the quote entities in `PricingTool/Data/Entities/`: `StaffMember.cs`, `Quote.cs` (with owned `Customer` and `Contract`), `Site.cs` (with an owned `Meter`) and `QuoteUpliftOverride.cs`, with the fields, types, lengths and nullability in data-model.md:
   - **StaffMember**: `EntraObjectId string(64)`, unique; `CustomerViewOn bool`.
   - **Quote**: `Reference string(16)`, unique, `CUQ-yy-nnnnnn`; `CotDate DateOnly?` ("Required when ChangeOfTenancy"); `CompanyNumber string(8)?`; `TermsMonths string(20)` (a set from {12, 24, 36, 48, 60}); `QualifyingPercent decimal(9,4)?`; `RowVersion rowversion`; `LastActivityUtc`.
   - **Site**: `Postcode string(8)`; JSON `Warnings`, `FieldSources` and `LookupSnapshot`.
   - **Meter**: `MpanTopLine string(9)?`, `MpanCore string(13)`, `Mprn string(10)?`, `IsLargeGasSite bool`.
   - **QuoteUpliftOverride**: unique (QuoteId, SupplierId, TermMonths).
-- [ ] T020 [P] Create the pricing entities in `PricingTool/Data/Entities/`: `PricingRun.cs`, `PricingRunSite.cs`, `NoQuoteResult.cs`, `PriceOption.cs` and `PriceOptionSite.cs`, as in data-model.md:
+- [X] T020 [P] Create the pricing entities in `PricingTool/Data/Entities/`: `PricingRun.cs`, `PricingRunSite.cs`, `NoQuoteResult.cs`, `PriceOption.cs` and `PriceOptionSite.cs`, as in data-model.md:
   - **Money and engine figures**: `decimal(28,10)`. **Rate strings**: `nvarchar(32)`, stored exactly as returned.
   - **PricingRunSite**: `RequestJson` with `LicenceCode` masked; `ErrorMessage string(1000)?`, which never contains secrets.
   - **PriceOption**: `RequestedUnitRateUplift`, `RequestedStandingChargeUplift`, `UnitRateUplift`, `StandingChargeUplift` and `IsCappedAtSupplierMax`; unique (PricingRunId, SupplierName, TermMonths, PlanType).
   - **PriceOptionSite**: the agent-only `BaseDayRate`, `BaseNightRate`, `BaseWendRate`, `BaseStandingCharge`, `ExtraInfo` and `FooterMessage`.
-- [ ] T021 [P] Create the settings entities in `PricingTool/Data/Entities/`, as in data-model.md:
+- [X] T021 [P] Create the settings entities in `PricingTool/Data/Entities/`, as in data-model.md:
   - `Supplier.cs`: `PricingName string(100)`, unique; `UpfrontPercent decimal(9,4)`, 0–100; nullable `MaxUnitRateUpliftElectricity`, `MaxUnitRateUpliftGas`, `MaxStandingChargeUpliftElectricity` and `MaxStandingChargeUpliftGas` (`decimal(18,6)?`, "Blank means no uplift is allowed"); `RowVersion`.
   - `SupplierAlias.cs`: at least one of `PowwrId string(20)?`, `Mpid string(10)?` or `LookupName string(200)?`.
   - `SettingVersion.cs`: unique (Key, Version); `IsPlaceholder`; `ComplianceApprover string(200)?`.
   - `EffectiveRate.cs`: unique (Kind, EffectiveFrom).
-- [ ] T022 [P] Create the audit and reporting entities in `PricingTool/Data/Entities/`, as in data-model.md:
+- [X] T022 [P] Create the audit and reporting entities in `PricingTool/Data/Entities/`, as in data-model.md:
   - `AuditEntry.cs`: `long` key; `QuoteId` indexed.
   - `ReportingRecord.cs`: `Guid` key; `SchemaVersion int`; `EventType`; denormalised filter columns; `Payload nvarchar(max)`.
   - `ReportingRecordSupplier.cs`: composite key; indexed `SupplierName`.
   - `ReportingOutboxEntry.cs`: `NextAttemptUtc` and `ExportedUtc` indexed together.
-- [ ] T023 Create `PricingTool/Data/PricingDbContext.cs` and one `IEntityTypeConfiguration` per entity in `PricingTool/Data/Configurations/`:
+- [X] T023 Create `PricingTool/Data/PricingDbContext.cs` and one `IEntityTypeConfiguration` per entity in `PricingTool/Data/Configurations/`:
   - decimal precisions exactly as in data-model.md "Storage conventions";
   - enums as strings (`nvarchar(32)`);
   - a UTC `DateTime` converter (`datetime2(3)`) and `DateOnly` → `date`;
@@ -159,12 +159,12 @@ adapters with mocks, **the pricing engine**, and the reporting recorder. Every u
   - the SQL Server sequence `QuoteNumbers` (`HasSequence`).
 
   Register it in `Program.cs` with `ConnectionStrings:PricingDb`.
-- [ ] T024 Write the pure decision `AppendOnlyGuard.IsForbidden(entityType, state, entity)`, and the `SaveChangesInterceptor` that throws on it, in `PricingTool/Data/AppendOnlyGuard.cs`:
+- [X] T024 Write the pure decision `AppendOnlyGuard.IsForbidden(entityType, state, entity)`, and the `SaveChangesInterceptor` that throws on it, in `PricingTool/Data/AppendOnlyGuard.cs`:
   - Modified or Deleted is forbidden for `AuditEntry`, `SettingVersion`, `EffectiveRate` (except deleting one whose `EffectiveFrom` is after today), `PricingRun`, `PricingRunSite`, `NoQuoteResult`, `PriceOptionSite`, `CustomerPdf`, `OutlookDraft`, `ReportingRecord` and `ReportingRecordSupplier`.
   - It's also forbidden for any `PriceOption` change other than `IsSelected` or `IsRecommended`.
 
   Test it in `PricingTool.Tests/Data/AppendOnlyGuardTests.cs` (research R19). Register the interceptor on the DbContext.
-- [ ] T025 Create the seed data in `PricingTool/Data/Seed/SeedData.cs`, applied through `HasData` in the configurations:
+- [X] T025 Create the seed data in `PricingTool/Data/Seed/SeedData.cs`, applied through `HasData` in the configurations:
   - **Suppliers**: British Gas, EDF, E.ON Next, Octopus Energy, Opus Energy, Scottish Power, Smartest Energy, Valda Energy, Crown Gas & Power and Yu Energy.
     - All active for both fuels, with `UpfrontPercent` 0.
     - Starting maximums set for **both fuels**, marked "to confirm", because a blank maximum allows no uplift (FR-060).
@@ -183,11 +183,11 @@ adapters with mocks, **the pricing engine**, and the reporting recorder. Every u
 
 ### Sign-in, roles and access
 
-- [ ] T027 [P] Create the roles and policies in `PricingTool/Auth/`:
+- [X] T027 [P] Create the roles and policies in `PricingTool/Auth/`:
   - `RoleNames.cs` with `Agent` and `Admin` only.
   - `Policies.cs`: `CanQuote` = Agent; `CanViewAllQuotes` = Admin; `CanAdmin` = Admin.
   - `GroupAndRoleHandler.cs`: the fallback requirement. In Entra mode it needs the `groups` claim to contain `AzureAd:AllowedGroupId` and at least one app role; otherwise it needs at least one app role (FR-001, FR-002, R2).
-- [ ] T028 Create `PricingTool/Auth/AuthenticationSetup.cs` for Entra mode:
+- [X] T028 Create `PricingTool/Auth/AuthenticationSetup.cs` for Entra mode:
   - Microsoft.Identity.Web OpenID Connect, single tenant;
   - `EnableTokenAcquisitionToCallDownstreamApi(["User.Read"])`, with `Mail.ReadWrite` requested later, incrementally;
   - `AddDistributedTokenCaches()` over `AddDistributedMemoryCache()`;
@@ -196,15 +196,15 @@ adapters with mocks, **the pricing engine**, and the reporting recorder. Every u
   - structured log entries for every sign-in and every refused request, with no tokens (FR-098).
 
   Call it from `Program.cs`.
-- [ ] T029 Create the Development test sign-in (FR-095) in `PricingTool/Auth/DevAuthentication.cs` and `PricingTool/Pages/Dev/SignIn.cshtml(.cs)`:
+- [X] T029 Create the Development test sign-in (FR-095) in `PricingTool/Auth/DevAuthentication.cs` and `PricingTool/Pages/Dev/SignIn.cshtml(.cs)`:
   - A cookie scheme that is registered **only** when `IHostEnvironment.IsDevelopment()` and `Authentication:Mode=Development`. Startup throws if the mode is `Development` in any other environment, and the page returns 404 outside Development.
   - It lists five made-up people with fixed GUID `oid`s, `@example.com` emails and phones: Alex Agent (Agent), Sam Agent (Agent), Ada Admin (Admin), Bea Both (Agent and Admin) and Pat Nobody (no role).
   - Use the `_StandaloneLayout` (T034).
-- [ ] T030 Create `PricingTool/Auth/StaffMemberSync.cs`, which on each sign-in creates or updates the `StaffMember` from `oid`, `name` and `preferred_username`/`email` and records `LastRolesSeen`. Also create `PricingTool/Auth/CurrentStaff.cs`, a scoped service giving the current `StaffMember` and roles for the request.
-- [ ] T031 [P] Write `PricingTool.Tests/Security/QuoteAccessTests.cs`, then implement `PricingTool/Services/Quotes/QuoteAccess.cs`:
+- [X] T030 Create `PricingTool/Auth/StaffMemberSync.cs`, which on each sign-in creates or updates the `StaffMember` from `oid`, `name` and `preferred_username`/`email` and records `LastRolesSeen`. Also create `PricingTool/Auth/CurrentStaff.cs`, a scoped service giving the current `StaffMember` and roles for the request.
+- [X] T031 [P] Write `PricingTool.Tests/Security/QuoteAccessTests.cs`, then implement `PricingTool/Services/Quotes/QuoteAccess.cs`:
   - `CanRead` is true for the owner or an Admin; `CanChange` only for the owner holding the Agent role (FR-003, FR-093).
   - An agent reading another agent's quote gets "not found", not "forbidden".
-- [ ] T032 Write `PricingTool.Tests/Security/DevSignInTests.cs` and `PricingTool.Tests/Security/AuthorisationTests.cs` using `WebApplicationFactory<Program>`, with a dummy connection string and the database never touched:
+- [X] T032 Write `PricingTool.Tests/Security/DevSignInTests.cs` and `PricingTool.Tests/Security/AuthorisationTests.cs` using `WebApplicationFactory<Program>`, with a dummy connection string and the database never touched:
   - `/Dev/SignIn` returns 404 in Production;
   - `Authentication:Mode=Development` in Production fails at startup;
   - an anonymous request is challenged;
@@ -214,48 +214,48 @@ adapters with mocks, **the pricing engine**, and the reporting recorder. Every u
 
 ### App shell
 
-- [ ] T033 [P] Create the icons in `PricingTool/TagHelpers/Icons.cs` and `PricingTool/TagHelpers/IconTagHelper.cs`:
+- [X] T033 [P] Create the icons in `PricingTool/TagHelpers/Icons.cs` and `PricingTool/TagHelpers/IconTagHelper.cs`:
   - Lucide path data for each icon used: file-plus, list, bar-chart-2, settings, log-out, search, map-pin, zap, flame, alert-triangle, check, x, download, mail, eye, eye-off, upload, refresh-cw, chevron-left, info.
   - `<icon name="…">` renders an inline `<svg viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" aria-hidden="true">` at 16px by default.
   - No npm and no emoji.
-- [ ] T034 Create the layouts in `PricingTool/Pages/Shared/`, with `_ViewImports.cshtml` and `_ViewStart.cshtml`:
+- [X] T034 Create the layouts in `PricingTool/Pages/Shared/`, with `_ViewImports.cshtml` and `_ViewStart.cshtml`:
   - `_Head.cshtml`: `~/cu/css/tokens.css`, `base.css` and `components.css` with `asp-append-version="true"`; a preload of `~/cu/fonts/poppins-700.woff2`; the favicon `~/cu/logo/favicon-32.png`; then `~/css/app.css`; deferred `~/cu/js/kit.js` and `~/js/app.js`.
   - `_Layout.cshtml`: the kit app shell.
     - The `.sidebar` uses the white `cu-logo-150-white.png` with a `cu-logo-250-white.png 2x` srcset, and `cu-mark-white.png` for the rail.
     - Nav items are New quote (`CanQuote`), Quotes (signed-in), Reports and Settings (`CanAdmin`), each with a `title`.
     - It shows the signed-in person and Sign out, then the `.topbar` and `.content`.
   - `_StandaloneLayout.cshtml`: `.standalone` with the colour `cu-logo-250.png`.
-- [ ] T035 [P] Create `PricingTool/wwwroot/css/app.css`: tokens only, loaded after the kit, with layout glue and each kit gap from plan.md "Components the kit lacks" marked `/* KIT GAP n: proposed for the kit */`. Create `PricingTool/wwwroot/js/app.js` with:
+- [X] T035 [P] Create `PricingTool/wwwroot/css/app.css`: tokens only, loaded after the kit, with layout glue and each kit gap from plan.md "Components the kit lacks" marked `/* KIT GAP n: proposed for the kit */`. Create `PricingTool/wwwroot/js/app.js` with:
   - `CU`-friendly helpers;
   - a `fetch` wrapper that sends the `RequestVerificationToken` header;
   - `swapFragment(target, html)`, which **refuses** HTML containing `data-menu`, `data-tab` or `.split` (research R24);
   - delegated click and submit handlers.
 
   No inline scripts anywhere.
-- [ ] T036 Create the standalone and root pages:
+- [X] T036 Create the standalone and root pages:
   - `PricingTool/Pages/Account/SignIn.cshtml(.cs)`, `Loading.cshtml(.cs)` (continues to the OpenID Connect challenge, or to `/Dev/SignIn` in Development mode, with a button if script is off), `NoAccess.cshtml(.cs)` (no data shown) and `SignOut.cshtml(.cs)` (POST);
   - `PricingTool/Pages/Index.cshtml(.cs)`, which sends `CanQuote` users to `/Quotes/New` and Admin-only users to `/Reports`;
   - `PricingTool/Pages/Error.cshtml(.cs)`, which shows only a reference ID (the trace ID) outside Development.
-- [ ] T037 Create `PricingTool/Infrastructure/SecurityHeaders.cs`, middleware setting CSP `default-src 'self'; img-src 'self' data:; style-src 'self'; script-src 'self'; frame-ancestors 'none'; form-action 'self' https://login.microsoftonline.com`, `X-Content-Type-Options: nosniff` and `Referrer-Policy: same-origin`. Configure antiforgery with header name `RequestVerificationToken` in `Program.cs`.
+- [X] T037 Create `PricingTool/Infrastructure/SecurityHeaders.cs`, middleware setting CSP `default-src 'self'; img-src 'self' data:; style-src 'self'; script-src 'self'; frame-ancestors 'none'; form-action 'self' https://login.microsoftonline.com`, `X-Content-Type-Options: nosniff` and `Referrer-Policy: same-origin`. Configure antiforgery with header name `RequestVerificationToken` in `Program.cs`.
 
 ### Audit and settings
 
-- [ ] T038 [P] Create `PricingTool/Services/Audit/AuditWriter.cs`, which adds an `AuditEntry` (actor ID and name, UTC time, action from data-model.md "Actions", entity, quote ID, old and new JSON) to the **current** DbContext, so it saves in the same `SaveChanges` as the action. It never serialises secrets.
-- [ ] T039 Write `PricingTool.Tests/Settings/EffectiveRateLookupTests.cs`: the latest row with `EffectiveFrom ≤ date` wins, and a date before any row is an error. Then create `PricingTool/Services/Settings/SettingsService.cs`, providing:
+- [X] T038 [P] Create `PricingTool/Services/Audit/AuditWriter.cs`, which adds an `AuditEntry` (actor ID and name, UTC time, action from data-model.md "Actions", entity, quote ID, old and new JSON) to the **current** DbContext, so it saves in the same `SaveChanges` as the action. It never serialises secrets.
+- [X] T039 Write `PricingTool.Tests/Settings/EffectiveRateLookupTests.cs`: the latest row with `EffectiveFrom ≤ date` wins, and a date before any row is an error. Then create `PricingTool/Services/Settings/SettingsService.cs`, providing:
   - the current value per `SettingVersion` key, with typed getters;
   - effective-rate lookup by date;
   - `GetPricingSnapshot(fuel, siteStartDates)`, which returns VAT and CCL rates per site start date, low-use and microbusiness thresholds, the commission basis, supplier payment models and maximums, and per-fuel maximums, for `PricingRun.SettingsSnapshot`.
-- [ ] T040 [P] Write `PricingTool.Tests/Settings/SupplierMatcherTests.cs` (match order: `powwrId`, then `mpid` or `shortCode`, then `name`; "British Gas Business"/`BRITISHG-001-S` → "British Gas"; no match → null). Then implement `PricingTool/Services/Settings/SupplierMatcher.cs` with a cached supplier list and an `Invalidate()` method.
+- [X] T040 [P] Write `PricingTool.Tests/Settings/SupplierMatcherTests.cs` (match order: `powwrId`, then `mpid` or `shortCode`, then `name`; "British Gas Business"/`BRITISHG-001-S` → "British Gas"; no match → null). Then implement `PricingTool/Services/Settings/SupplierMatcher.cs` with a cached supplier list and an `Invalidate()` method.
 
 ### POWWR UK Pricing adapter (tests first)
 
-- [ ] T041 [P] Create the DTOs in `PricingTool/Powwr/Pricing/Dtos/`, mirroring `docs/powwr/uk-pricing-api-1.2.0.json` exactly:
+- [X] T041 [P] Create the DTOs in `PricingTool/Powwr/Pricing/Dtos/`, mirroring `docs/powwr/uk-pricing-api-1.2.0.json` exactly:
   - PascalCase names, with no naming policy and nulls left out;
   - request wrappers `quoteDetails`, `promptsSearch` and `priceChangeRequest`;
   - result wrappers `GetElectricRatesResult`, `GetGasRatesResult`, `GetNumberOfPromptsResult`, `GetLatestPriceChangeResult` and `PingResult`;
   - every `Rate` field, with the `Raw*` fields as `decimal`.
-- [ ] T042 [P] Create the domain models and the interface in `PricingTool/Powwr/Pricing/Models.cs` and `PricingTool/Powwr/Pricing/IPowwrPricingClient.cs`, exactly as in [contracts/adapters.md](contracts/adapters.md): `ElectricPriceRequest`, `GasPriceRequest`, `SitePriceResponse`, `ReturnedRate`, `SupplierNoQuote`, `RateStructureResponse` and `SupplierPriceChange`.
-- [ ] T043 [P] Write `PricingTool.Tests/Powwr/PowwrPricingRequestMappingTests.cs`, with one test per row of [contracts/powwr-uk-pricing-mapping.md](contracts/powwr-uk-pricing-mapping.md) for QuoteDetails, ElectricSupply and GasSupply:
+- [X] T042 [P] Create the domain models and the interface in `PricingTool/Powwr/Pricing/Models.cs` and `PricingTool/Powwr/Pricing/IPowwrPricingClient.cs`, exactly as in [contracts/adapters.md](contracts/adapters.md): `ElectricPriceRequest`, `GasPriceRequest`, `SitePriceResponse`, `ReturnedRate`, `SupplierNoQuote`, `RateStructureResponse` and `SupplierPriceChange`.
+- [X] T043 [P] Write `PricingTool.Tests/Powwr/PowwrPricingRequestMappingTests.cs`, with one test per row of [contracts/powwr-uk-pricing-mapping.md](contracts/powwr-uk-pricing-mapping.md) for QuoteDetails, ElectricSupply and GasSupply:
   - `SecurityDetails` holds the licence code and `mascaradeuser` = the agent's display name, and the stored copy has `LicenceCode` = `***`;
   - `QuoteReference`; `Settings` `ShowNoQuoteReason=true`; `Renewal`, `COT`, `CotDate` and `OutOfContract`;
   - `PaymentMethodText`, for example "Monthly Direct Debit"; `BusinessType` through the configuration map;
@@ -264,7 +264,7 @@ adapters with mocks, **the pricing engine**, and the reporting recorder. Every u
   - Day, Night and Wend consumption, and kVA and kVArh;
   - `ContractRenewalDate` = the start date; `NewContractEndDate` only when one term is requested;
   - gas `MPR` and `Consumption`.
-- [ ] T044 [P] Write `PricingTool.Tests/Powwr/PowwrPricingResponseMappingTests.cs`:
+- [X] T044 [P] Write `PricingTool.Tests/Powwr/PowwrPricingResponseMappingTests.cs`:
   - rate strings kept exactly, and `Raw*` decimals exact (for example 4269.2327985);
   - `NoQuoteReason` → `SupplierNoQuote`;
   - `QuoteResult.Error` → `Succeeded=false`, `PowwrError`;
@@ -272,15 +272,15 @@ adapters with mocks, **the pricing engine**, and the reporting recorder. Every u
   - a missing or negative `RawAnnualPrice` → an invalid rate;
   - `/prompts` names → registers ("Day", "Unit" or "Standard" → Day; "Night" → Night; "Evening and Weekend", "Weekend" or "Wend" → Wend; unknown values logged);
   - `/pricechange` → `SupplierPriceChange`.
-- [ ] T045 Implement `PricingTool/Powwr/Pricing/PowwrPricingMapper.cs`, `PaymentMethodText.cs` and `BusinessTypeText.cs` (reading `Powwr:Pricing:BusinessTypes`) so T043 and T044 pass.
-- [ ] T046 Implement `PricingTool/Powwr/Pricing/PowwrPricingHttpClient.cs`, a typed `HttpClient`:
+- [X] T045 Implement `PricingTool/Powwr/Pricing/PowwrPricingMapper.cs`, `PaymentMethodText.cs` and `BusinessTypeText.cs` (reading `Powwr:Pricing:BusinessTypes`) so T043 and T044 pass.
+- [X] T046 Implement `PricingTool/Powwr/Pricing/PowwrPricingHttpClient.cs`, a typed `HttpClient`:
   - base URL by mode: SwaggerHub `https://virtserver.swaggerhub.com/POWWR/UkPricingAPI/1.2.0`, Live `https://udcoreapi.co.uk/Service.svc/web`;
   - a timeout of `TimeoutSeconds`;
   - it always checks the `Error` object;
   - a credentials rejection becomes `CredentialsRejected`.
 
   Also implement `PricingTool/Powwr/Pricing/PowwrRetryHandler.cs`, which retries only 429 and 503, honouring `Retry-After` capped at 10 s, with at most 2 retries. Test it in `PricingTool.Tests/Powwr/PowwrRetryHandlerTests.cs` with a fake inner handler and no network (research R6).
-- [ ] T047 Implement `PricingTool/Powwr/Pricing/MockPowwrPricingClient.cs` exactly as in the contract's "Mock adapter behaviour" section:
+- [X] T047 Implement `PricingTool/Powwr/Pricing/MockPowwrPricingClient.cs` exactly as in the contract's "Mock adapter behaviour" section:
   - **Suppliers and rates**: the ten suppliers; rates seeded by MPAN or MPRN and consumption; base rates in the given ranges plus 2% per extra year.
   - **Figures**: the plan's uplift applied; `RawAnnualPrice` = Σ(rate×kWh)/100 + SC×365/100; `RawBaseAnnualPrice` without uplift; `RawCommission` = the difference; `PricebookVersion` `MOCK-yyyyMMdd`.
   - **Variety**: Valda declines; Yu 60-month is outside the pricing window; Octopus has a `FooterMessage`; Opus has a product with SC `"0.00"`.
@@ -291,8 +291,8 @@ adapters with mocks, **the pricing engine**, and the reporting recorder. Every u
 
 ### POWWR Meter Lookup adapter (tests first)
 
-- [ ] T048 [P] Create `PricingTool/Powwr/MeterLookup/Dtos/` (camelCase, read case-insensitively), and `PricingTool/Powwr/MeterLookup/Models.cs` and `IMeterLookupClient.cs` as in [contracts/adapters.md](contracts/adapters.md): `LookupResult<T>` (Found/NotFound/Unavailable/Rejected), `LookupAddress`, `LookupMeters`, `LookupElectricMeter`, `LookupGasMeter` and `MeterSearch`.
-- [ ] T049 [P] Write `PricingTool.Tests/Powwr/MeterLookupMappingTests.cs`, using POWWR's example response bodies from `docs/powwr/meter-lookup-api-2.5.0.json` (with their mixed casing):
+- [X] T048 [P] Create `PricingTool/Powwr/MeterLookup/Dtos/` (camelCase, read case-insensitively), and `PricingTool/Powwr/MeterLookup/Models.cs` and `IMeterLookupClient.cs` as in [contracts/adapters.md](contracts/adapters.md): `LookupResult<T>` (Found/NotFound/Unavailable/Rejected), `LookupAddress`, `LookupMeters`, `LookupElectricMeter`, `LookupGasMeter` and `MeterSearch`.
+- [X] T049 [P] Write `PricingTool.Tests/Powwr/MeterLookupMappingTests.cs`, using POWWR's example response bodies from `docs/powwr/meter-lookup-api-2.5.0.json` (with their mixed casing):
   - `profileClass` "03" → 3 and `meterTimeswitchClass` "801" → 801; a non-numeric value → null plus a warning;
   - redacted MPANs are kept as hints only;
   - `amrIndicator` "Y" → smart suggested;
@@ -300,7 +300,7 @@ adapters with mocks, **the pricing engine**, and the reporting recorder. Every u
   - `isDomesticConsumer` → `Domestic`; `energisationStatus` "D" → `DeEnergised`; `greenDealStatus` "Active" → `GreenDealActive`;
   - an unmatched supplier → `SupplierNotMapped`;
   - an RFC 7807 body → `Rejected`, with a safe summary.
-- [ ] T050 Implement `PricingTool/Powwr/MeterLookup/MeterLookupMapper.cs` (passing T049), plus:
+- [X] T050 Implement `PricingTool/Powwr/MeterLookup/MeterLookupMapper.cs` (passing T049), plus:
   - `MeterLookupTokenProvider.cs`: client credentials with scopes `udgs-lookupservices-meter-api brokerage:{OrganisationPowwrId}`, cached until 60 s before expiry, refreshed under a `SemaphoreSlim`;
   - `MeterLookupHttpClient.cs`:
     - base URLs by mode, as in [contracts/powwr-meter-lookup-mapping.md](contracts/powwr-meter-lookup-mapping.md);
@@ -308,35 +308,35 @@ adapters with mocks, **the pricing engine**, and the reporting recorder. Every u
     - on 401 or 403, clear the token and retry once;
     - timeouts and 5xx → `Unavailable`;
     - SwaggerHub mode sends no token.
-- [ ] T051 Implement `PricingTool/Powwr/MeterLookup/MockMeterLookupClient.cs` with every postcode and meter in the contract's mock table (`ZZ1 1AA` to `ZZ1 1AG`, `ZZ9 9ZZ` → NotFound, `ZZ9 9ZY` → Unavailable). Searching by MPAN or MPRN finds any of those meters, plus `2300000000019`. All data is made up.
-- [ ] T052 Create `PricingTool/Powwr/PowwrServiceCollectionExtensions.cs`, which registers both adapters by mode (Mock is the default), the typed `HttpClient`s with `PowwrRetryHandler`, and `SemaphoreSlim(MaxConcurrentRequests)`. Call it from `Program.cs`. Tests never register an HTTP client.
+- [X] T051 Implement `PricingTool/Powwr/MeterLookup/MockMeterLookupClient.cs` with every postcode and meter in the contract's mock table (`ZZ1 1AA` to `ZZ1 1AG`, `ZZ9 9ZZ` → NotFound, `ZZ9 9ZY` → Unavailable). Searching by MPAN or MPRN finds any of those meters, plus `2300000000019`. All data is made up.
+- [X] T052 Create `PricingTool/Powwr/PowwrServiceCollectionExtensions.cs`, which registers both adapters by mode (Mock is the default), the typed `HttpClient`s with `PowwrRetryHandler`, and `SemaphoreSlim(MaxConcurrentRequests)`. Call it from `Program.cs`. Tests never register an HTTP client.
 
 ### Pricing engine (tests first)
 
-- [ ] T053 [P] Write `PricingTool.Tests/Pricing/RoundingTests.cs`. `Rounding.ToPennies` = `Math.Round(x, 2, MidpointRounding.AwayFromZero)`; `MoneyFormat` uses en-GB `£1,234.56`; totals are rounded from the full-precision sum (research R7).
-- [ ] T054 [P] Write `PricingTool.Tests/Pricing/VatCclCalculatorTests.cs`:
+- [X] T053 [P] Write `PricingTool.Tests/Pricing/RoundingTests.cs`. `Rounding.ToPennies` = `Math.Round(x, 2, MidpointRounding.AwayFromZero)`; `MoneyFormat` uses en-GB `£1,234.56`; totals are rounded from the full-precision sum (research R7).
+- [X] T054 [P] Write `PricingTool.Tests/Pricing/VatCclCalculatorTests.cs`:
   - **Standard**: CCL = kWh×rate/100, VAT = (cost + CCL)×20%.
   - **Low use**: at or below 33 (electricity) or 145 (gas) kWh a day, worked out as annual ÷ 365 and including the exact boundary, gives 5% VAT and no CCL.
   - **Qualifying q%**: CCL = kWh×(1−q)×rate; VAT = cost×q×5% + (cost×(1−q) + CCL)×20%. The whole-supply percentage, when set and met, makes q = 100%.
   - Rates come from each site's start date (FR-029 to FR-031, research R8).
-- [ ] T055 [P] Write `PricingTool.Tests/Pricing/CommissionCalculatorTests.cs`:
+- [X] T055 [P] Write `PricingTool.Tests/Pricing/CommissionCalculatorTests.cs`:
   - PerYear: contract total = RawCommission × term ÷ 12. WholeContract: contract total = RawCommission.
   - Upfront = total × UpfrontPercent ÷ 100, for 0, 100 and 40.
   - Monthly = (total − upfront) ÷ term months.
   - Multi-site sums (FR-037, research R9).
-- [ ] T056 [P] Write `PricingTool.Tests/Pricing/SavingCalculatorTests.cs`:
+- [X] T056 [P] Write `PricingTool.Tests/Pricing/SavingCalculatorTests.cs`:
   - A saving is only worked out when the current SC and a current rate for every register are given.
   - Current cost = Σ(rate×kWh)/100 + SC×365/100.
   - Saving = current − new, positive meaning "Saves" and negative "Costs more".
   - Including VAT and CCL uses the same treatment for both sides (research R11).
-- [ ] T057 [P] Write `PricingTool.Tests/Pricing/MicrobusinessTestTests.cs`: ≤ 100,000 kWh electricity or ≤ 293,000 kWh gas is flagged (exactly at the threshold counts); consumption is combined across all of the quote's sites; the declaration flags only when **both** answers are yes; the source is Consumption, Declaration, Both or None (FR-027, FR-028).
-- [ ] T058 [P] Write the remaining engine tests:
+- [X] T057 [P] Write `PricingTool.Tests/Pricing/MicrobusinessTestTests.cs`: ≤ 100,000 kWh electricity or ≤ 293,000 kWh gas is flagged (exactly at the threshold counts); consumption is combined across all of the quote's sites; the declaration flags only when **both** answers are yes; the source is Consumption, Declaration, Both or None (FR-027, FR-028).
+- [X] T058 [P] Write the remaining engine tests:
   - `PricingTool.Tests/Pricing/MultiSiteCombinerTests.cs`: options keyed by supplier, term and `PlanType`; partial when any site is missing; totals at full precision; a total saving only when every covered site has one; `HasNoStandingCharge` when every SC parses as 0.
   - `PricingTool.Tests/Pricing/AnnualCostCrossCheckTests.cs`: a warning is logged when the difference is over 1% or over £1, and the shown figures never change.
   - `PricingTool.Tests/Pricing/BaseRateTests.cs`: a base rate is the returned rate minus the uplift, with the returned string's number of decimal places.
-- [ ] T059 Implement `PricingTool/Services/Pricing/Rounding.cs` and `MoneyFormat.cs` so T053 passes.
-- [ ] T060 Implement `VatCclCalculator.cs`, `LowUseTest.cs`, `MicrobusinessTest.cs`, `CommissionCalculator.cs`, `SavingCalculator.cs`, `AnnualCostCrossCheck.cs` and `BaseRates.cs` in `PricingTool/Services/Pricing/`, all pure, static and `decimal`-only, so T054–T058 pass.
-- [ ] T061 Implement `PricingTool/Services/Pricing/MultiSiteCombiner.cs` and `PricingTool/Services/Pricing/PricingEngine.cs`. The engine is stateless. Its input is each site's `SitePriceResponse`, the site inputs and the `PricingSettingsSnapshot`; its output is a `PricingResult` holding everything needed for `PricingRunSite`, `PriceOption` and `PriceOptionSite`:
+- [X] T059 Implement `PricingTool/Services/Pricing/Rounding.cs` and `MoneyFormat.cs` so T053 passes.
+- [X] T060 Implement `VatCclCalculator.cs`, `LowUseTest.cs`, `MicrobusinessTest.cs`, `CommissionCalculator.cs`, `SavingCalculator.cs`, `AnnualCostCrossCheck.cs` and `BaseRates.cs` in `PricingTool/Services/Pricing/`, all pure, static and `decimal`-only, so T054–T058 pass.
+- [X] T061 Implement `PricingTool/Services/Pricing/MultiSiteCombiner.cs` and `PricingTool/Services/Pricing/PricingEngine.cs`. The engine is stateless. Its input is each site's `SitePriceResponse`, the site inputs and the `PricingSettingsSnapshot`; its output is a `PricingResult` holding everything needed for `PricingRunSite`, `PriceOption` and `PriceOptionSite`:
   - per site: treatment, rates used, current costs;
   - per site and option: cost excluding VAT and CCL (= `RawAnnualPrice`), CCL, VAT, cost including both, savings, commission split, base rates, cross-check;
   - per option: totals, partial flags, the microbusiness result and the commission basis.
@@ -345,14 +345,14 @@ adapters with mocks, **the pricing engine**, and the reporting recorder. Every u
 
 ### Reporting foundation
 
-- [ ] T062 [P] Write `PricingTool.Tests/Reporting/ReportingRecordBuilderTests.cs`:
+- [X] T062 [P] Write `PricingTool.Tests/Reporting/ReportingRecordBuilderTests.cs`:
   - `schemaVersion` = 1, and every field in FR-084 and [contracts/reporting-record.md](contracts/reporting-record.md) is present;
   - money as `{ value, display }` pairs, with `display` = `Rounding.ToPennies`;
   - the commission basis in `pricingRun`, and `cappedAtSupplierMax` on each price and option;
   - **no** contact name, email or phone, and no licence code;
   - the required properties of `contracts/reporting-record.v1.schema.json` are present for each event type.
-- [ ] T063 Implement `PricingTool/Services/Reporting/ReportingRecordBuilder.cs` and `ReportingRecorder.cs`. The recorder adds a `ReportingRecord`, its `ReportingRecordSupplier` rows and a `ReportingOutboxEntry` to the current DbContext, so they save in the same transaction as the action, with no export on the request path (FR-089).
-- [ ] T064 [P] Create `PricingTool/Services/Reporting/IReportingExportStore.cs` and `LocalFolderReportingExportStore.cs`, which writes to `Storage:ReportingExport:LocalRoot` through a temporary file and an atomic move, and deletes for retention. Also create `ReportingExportPath.cs`, which builds `quotes/yyyy/MM/dd/{HHmmssfff}-{eventType}-{recordId}.json` from UTC. Test it in `PricingTool.Tests/Reporting/ReportingExportPathTests.cs`.
+- [X] T063 Implement `PricingTool/Services/Reporting/ReportingRecordBuilder.cs` and `ReportingRecorder.cs`. The recorder adds a `ReportingRecord`, its `ReportingRecordSupplier` rows and a `ReportingOutboxEntry` to the current DbContext, so they save in the same transaction as the action, with no export on the request path (FR-089).
+- [X] T064 [P] Create `PricingTool/Services/Reporting/IReportingExportStore.cs` and `LocalFolderReportingExportStore.cs`, which writes to `Storage:ReportingExport:LocalRoot` through a temporary file and an atomic move, and deletes for retention. Also create `ReportingExportPath.cs`, which builds `quotes/yyyy/MM/dd/{HHmmssfff}-{eventType}-{recordId}.json` from UTC. Test it in `PricingTool.Tests/Reporting/ReportingExportPathTests.cs`.
 
 **Checkpoint**: the app starts, and the Development sign-in shows the app shell with role-based navigation. Pat Nobody sees No access. `dotnet ef database update` seeds the database. Every validation, mapping, engine and reporting-builder test passes. **User stories can now begin.**
 

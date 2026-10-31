@@ -56,12 +56,12 @@ If the merge has conflicts, stop and show me. Don't guess. Never force-push, reb
 - The app is built and run locally first. Azure deployment is a separate, later feature, so don't add Azure resources until then.
 
 ## Commands
-Update this section with the real project paths once the solution exists.
+The solution is `PricingTool.slnx`: the web app is `PricingTool/` and the xUnit tests are `PricingTool.Tests/`. EF Core migrations live in the web project. Run `dotnet tool restore` once to get `dotnet ef` and `dotnet pwsh`.
 ```powershell
 dotnet build
 dotnet test
-dotnet run --project <web project>
-dotnet ef database update --project <data project>
+dotnet run --project PricingTool
+dotnet ef database update --project PricingTool
 ```
 
 ## Rules that are easy to break

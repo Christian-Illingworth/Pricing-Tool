@@ -1,0 +1,20 @@
+@page
+@model PricingTool.Pages.Account.LoadingModel
+@{
+    ViewData["Title"] = "Signing in";
+    Layout = "_StandaloneLayout";
+}
+<div class="standalone-card">
+    <div class="standalone-icon"><icon name="lock" size="22" /></div>
+    <h1>@(Model.IsDevelopmentSignIn ? "Taking you to the test sign-in…" : "Taking you to Microsoft sign-in…")</h1>
+    <p>This only takes a moment. If nothing happens, use the button below.</p>
+    <div class="load-bar"><span></span></div>
+    <form method="get" class="standalone-actions">
+        <input type="hidden" name="handler" value="Continue">
+        @if (Model.ReturnUrl is not null)
+        {
+            <input type="hidden" name="returnUrl" value="@Model.ReturnUrl">
+        }
+        <button type="submit" class="btn-primary" data-auto-continue>Continue to sign in</button>
+    </form>
+</div>

@@ -1,0 +1,14 @@
+@model string
+@* The kit's <head>: tokens, base and components, then the app's own token-only styles, then kit.js and
+   app.js deferred. No inline styles or scripts anywhere (the CSP allows only 'self'). *@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>@Model · CU Pricing Tool</title>
+<link rel="icon" type="image/png" href="~/cu/logo/favicon-32.png">
+<link rel="preload" href="~/cu/fonts/poppins-700.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="~/cu/css/tokens.css" asp-append-version="true">
+<link rel="stylesheet" href="~/cu/css/base.css" asp-append-version="true">
+<link rel="stylesheet" href="~/cu/css/components.css" asp-append-version="true">
+<link rel="stylesheet" href="~/css/app.css" asp-append-version="true">
+<script src="~/cu/js/kit.js" asp-append-version="true" defer></script>
+<script src="~/js/app.js" asp-append-version="true" defer></script>

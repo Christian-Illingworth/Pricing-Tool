@@ -1,0 +1,79 @@
+/* CU Pricing Tool: app styles, loaded after the design kit (wwwroot/cu, never edited).
+   Tokens only: no hex, rgb(), hsl() or named colours (constitution Principle IV, DESIGN.md).
+   Two kinds of rule live here:
+   - layout glue for this app's pages;
+   - KIT GAP n: a minimal stand-in for a component the kit lacks (plan.md "Components the kit lacks").
+     Each is proposed for the kit and should be deleted here once the kit has it. */
+
+/* ═══ Layout glue ═══ */
+
+/* Sign out sits in the sidebar foot as a nav item, so the icon rail handles it like the others. */
+.sidebar-signout { margin: 0; }
+.sidebar-signout .nav-item { padding-left: 0; padding-right: 0; border-left: none; }
+
+/* The Development sign-in's list of made-up people. */
+.dev-people { display: flex; flex-direction: column; gap: var(--sp-2); margin: 0; padding: 0; list-style: none; }
+.dev-people form { margin: 0; }
+.dev-person { width: 100%; justify-content: space-between; }
+.dev-person .caption { font-weight: var(--fw-regular); }
+
+/* A page section that hasn't been built yet: an empty state inside a card. */
+.coming-soon { max-width: 720px; }
+
+/* The error page's reference ID, for copying into a support request. */
+.reference-id { font-variant-numeric: tabular-nums; word-break: break-all; }
+
+/* ═══ KIT GAP 1: proposed for the kit ═══
+   A re-initialise hook (CU.init(root)) or delegated listeners for [data-menu], [data-tab] and .split.
+   Until then, app.js's swapFragment refuses HTML containing them (research R24). No CSS needed. */
+
+/* ═══ KIT GAP 2: proposed for the kit ═══
+   Sortable table header: a button in a th, with an aria-sort indicator. */
+.table th .sort-btn {
+  display: inline-flex; align-items: center; gap: var(--sp-1); padding: 0; border: none; background: none;
+  font: inherit; color: inherit; text-transform: inherit; letter-spacing: inherit; cursor: pointer;
+}
+.table th .sort-btn:hover { color: var(--teal); }
+.table th[aria-sort="ascending"] .sort-btn::after { content: "\2191"; }
+.table th[aria-sort="descending"] .sort-btn::after { content: "\2193"; }
+
+/* ═══ KIT GAP 3: proposed for the kit ═══
+   Table row selection: a checkbox column, and a selected state distinct from .is-active. */
+.table .row-select { width: 36px; text-align: center; }
+.table .row-select input { width: 16px; height: 16px; margin: 0; accent-color: var(--teal); cursor: pointer; }
+.table tr.is-selected td { background: var(--teal-bg); }
+
+/* ═══ KIT GAP 4: proposed for the kit ═══
+   Highlighted (recommended) row: a left edge plus a tint, on screen and in the PDF. */
+.table tr.is-recommended td { background: var(--green-bg); }
+.table tr.is-recommended td:first-child { box-shadow: inset 3px 0 0 var(--green); }
+
+/* ═══ KIT GAP 5: proposed for the kit ═══
+   File picker / drop zone for the spreadsheet upload. .file-chip is for attachments, not picking. */
+.file-drop {
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: var(--sp-2);
+  padding: var(--sp-6) var(--sp-4); border: 1px dashed var(--bdr2); border-radius: var(--r);
+  background: var(--surf); color: var(--txt); text-align: center; cursor: pointer;
+}
+.file-drop:hover, .file-drop:focus-within { border-color: var(--teal); background: var(--tint-hover); }
+.file-drop input[type="file"] { max-width: 100%; font: inherit; color: var(--txt2); }
+
+/* ═══ KIT GAP 6: proposed for the kit ═══
+   Print/A4 document styles (@page, repeating footer, page breaks) belong in css/pdf.css, which arrives
+   with the customer PDF (US3). Nothing here. */
+
+/* ═══ KIT GAP 7: proposed for the kit ═══
+   Placeholder frame: compliance wording that isn't approved yet, on the PDF and in the Settings
+   preview. The words "PLACEHOLDER – NOT APPROVED WORDING" come from the markup, not CSS. */
+.placeholder-frame {
+  display: flex; flex-direction: column; gap: var(--sp-1); padding: var(--sp-3);
+  border: 2px dashed var(--amber); border-radius: var(--rsm); background: var(--amber-bg); color: var(--txt);
+}
+.placeholder-frame-label { font-size: var(--fs-2xs); font-weight: var(--fw-bold); letter-spacing: 0.06em; text-transform: uppercase; }
+
+/* ═══ KIT GAP 8: proposed for the kit ═══
+   Row-level error table for upload validation: row, column, value, message, with an error mark. */
+.table--errors td { vertical-align: top; }
+.table--errors .error-mark {
+  display: inline-block; width: 8px; height: 8px; margin-right: var(--sp-2); border-radius: 50%; background: var(--coral);
+}

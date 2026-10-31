@@ -1,0 +1,16 @@
+@{
+    var title = ViewData["Title"] as string ?? "CU Pricing Tool";
+}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <partial name="_Head" model="title" />
+</head>
+<body>
+    @* Sign-in, loading, no access and errors: the colour logo on the light page, one card. *@
+    <main class="standalone">
+        <img class="standalone-logo" src="~/cu/logo/cu-logo-150.png" srcset="/cu/logo/cu-logo-150.png 1x, /cu/logo/cu-logo-250.png 2x" alt="Consultiv Utilities">
+        @RenderBody()
+    </main>
+</body>
+</html>

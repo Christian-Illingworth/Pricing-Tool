@@ -1,0 +1,6 @@
+<Solution>
+  <Folder Name="/PricingTool/">
+    <Project Path="PricingTool/PricingTool.csproj" />
+  </Folder>
+  <Project Path="PricingTool.Tests/PricingTool.Tests.csproj" />
+</Solution>

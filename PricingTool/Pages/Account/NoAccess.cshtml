@@ -1,0 +1,25 @@
+@page
+@model PricingTool.Pages.Account.NoAccessModel
+@{
+    ViewData["Title"] = "No access";
+    Layout = "_StandaloneLayout";
+}
+<div class="standalone-card">
+    <div class="standalone-icon"><icon name="lock" size="22" /></div>
+    <h1>You don't have access to this</h1>
+    <p>The CU Pricing Tool is for members of the Pricing Tool Users group who hold the Agent or Admin role, and some pages need a particular role.</p>
+    <p>If you need access, ask IT to add you to the group and give you the right role, then sign in again.</p>
+    <div class="standalone-actions">
+        @if (Model.IsSignedIn)
+        {
+            <form method="post" asp-page="/Account/SignOut">
+                <button type="submit" class="btn-secondary"><icon name="log-out" />Sign out</button>
+            </form>
+            <a class="btn-link" href="~/">Go to the start page</a>
+        }
+        else
+        {
+            <a class="btn-primary" asp-page="/Account/SignIn">Sign in</a>
+        }
+    </div>
+</div>

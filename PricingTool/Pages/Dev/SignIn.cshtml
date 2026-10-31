@@ -1,0 +1,29 @@
+@page
+@model PricingTool.Pages.Dev.SignInModel
+@{
+    ViewData["Title"] = "Test sign-in";
+    Layout = "_StandaloneLayout";
+}
+<div class="standalone-card">
+    <div class="standalone-icon"><icon name="user" size="22" /></div>
+    <h1>Test sign-in</h1>
+    <p>Pick a made-up person. This page exists only on a developer's machine, until IT provides the Microsoft sign-in.</p>
+    <ul class="dev-people">
+        @foreach (var person in Model.People)
+        {
+            <li>
+                <form method="post">
+                    <input type="hidden" name="key" value="@person.Key">
+                    @if (Model.ReturnUrl is not null)
+                    {
+                        <input type="hidden" name="returnUrl" value="@Model.ReturnUrl">
+                    }
+                    <button type="submit" class="btn-secondary dev-person">
+                        <span>@person.DisplayName</span>
+                        <span class="caption">@(person.Roles.Count == 0 ? "No role" : string.Join(" and ", person.Roles))</span>
+                    </button>
+                </form>
+            </li>
+        }
+    </ul>
+</div>

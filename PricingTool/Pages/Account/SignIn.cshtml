@@ -1,0 +1,18 @@
+@page
+@model PricingTool.Pages.Account.SignInModel
+@{
+    ViewData["Title"] = "Sign in";
+    Layout = "_StandaloneLayout";
+}
+<div class="standalone-card">
+    <div class="standalone-icon"><icon name="log-in" size="22" /></div>
+    <h1>CU Pricing Tool</h1>
+    <p>Sign in with your Consultiv Utilities Microsoft account to price and quote business energy.</p>
+    @if (Model.IsDevelopmentSignIn)
+    {
+        <div class="notice tone-amber">Development: you'll pick a made-up test person instead of signing in with Microsoft.</div>
+    }
+    <div class="standalone-actions">
+        <a class="btn-primary" asp-page="/Account/Loading" asp-route-returnUrl="@Model.ReturnUrl">Sign in with Microsoft</a>
+    </div>
+</div>

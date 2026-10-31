@@ -1,0 +1,15 @@
+@page
+@model PricingTool.Pages.ErrorModel
+@{
+    ViewData["Title"] = "Something went wrong";
+    Layout = "_StandaloneLayout";
+}
+<div class="standalone-card">
+    <div class="standalone-icon"><icon name="alert-triangle" size="22" /></div>
+    <h1>Something went wrong</h1>
+    <p>We couldn't finish that. Nothing you entered has been lost. Try again, and if it keeps happening, send this reference to an admin:</p>
+    <p class="caption reference-id">Reference: @Model.ReferenceId</p>
+    <div class="standalone-actions">
+        <a class="btn-primary" href="~/">Back to the CU Pricing Tool</a>
+    </div>
+</div>
