@@ -830,7 +830,7 @@ The tool's behaviour until each is answered is fixed by the spec or the decision
 | P-13 (Q13) | POWWR | What `mascaradeuser` should be | The agent's display name |
 | P-14 (Q14) | POWWR | Supplier name and ID map | Admin aliases (R5) |
 | P-15 (Q15) | POWWR | `/prompts` length rules | R16 |
-| **P-16 (new)** | POWWR | Does any lookup field show a pending electricity switch? `tradingStatus` (N/R/T/X) isn't explained. | No electricity switching warning (gas uses `incomingSupplier`). **This leaves FR-012 partly unmet for electricity.** Added to `docs/powwr/README.md` as question 16. |
+| **P-16 (new)** | POWWR | Does any lookup field show a pending electricity switch? `tradingStatus` (N/R/T/X) isn't explained. | No electricity switching warning (gas uses `incomingSupplier`), as FR-012 now states. The warning is added once POWWR names a field. Added to `docs/powwr/README.md` as question 16. |
 | **P-17 (new)** | POWWR | Does `LatestPriceChange.Version` match `Rate.PricebookVersion`? | Compared directly (R14); if the formats differ, the check falls back to `LastPriceChange` ≥ the fetched date. Added to `docs/powwr/README.md` as question 17 |
 | F-1 | Finance | VAT and CCL partial-use rule, and the CCL rates | R8 settings, starting blank or "to confirm" |
 | F-2 | Finance | Supplier payment models | `UpfrontPercent` = 0 (all monthly) |

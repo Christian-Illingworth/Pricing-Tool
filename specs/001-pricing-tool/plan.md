@@ -62,7 +62,7 @@ in the meantime. None blocks the build.
 
 | # | Principle | How this design complies | Pre-research | Post-design |
 |---|---|---|---|---|
-| I | **Security First** (non-negotiable) | **Secrets**: the licence code, the Meter Lookup client secret and the Entra client secret are only in user secrets, read through `IConfiguration`. Key Vault is added later as a configuration provider. **Tokens**: acquired and cached on the server. **Logs and stored copies**: the stored POWWR request masks `LicenceCode`, and no secret or token is logged, audited or exported (R4, R25). **Access**: every page requires sign-in by fallback policy; the server checks the tenant, the group (`AllowedGroupId`) and an app role, with the Agent and Admin roles and quote ownership enforced through policies on every handler (R2, FR-093). Sessions last at most 8 hours (FR-094). **Dev sign-in**: works only in the Development environment, startup fails otherwise, and `/Dev/SignIn` returns 404 (automated test). **Other protections**: antiforgery on every POST, security headers and CSP (R24). ⚠️ **The constitution names Agent, Manager and Admin roles**; the spec now has Agent and Admin only, so the constitution needs a small amendment (see the gate result) | ✅ | ⚠️ |
+| I | **Security First** (non-negotiable) | **Secrets**: the licence code, the Meter Lookup client secret and the Entra client secret are only in user secrets, read through `IConfiguration`. Key Vault is added later as a configuration provider. **Tokens**: acquired and cached on the server. **Logs and stored copies**: the stored POWWR request masks `LicenceCode`, and no secret or token is logged, audited or exported (R4, R25). **Access**: every page requires sign-in by fallback policy; the server checks the tenant, the group (`AllowedGroupId`) and an app role, with the Agent and Admin roles and quote ownership enforced through policies on every handler (R2, FR-093). Sessions last at most 8 hours (FR-094). **Dev sign-in**: works only in the Development environment, startup fails otherwise, and `/Dev/SignIn` returns 404 (automated test). **Other protections**: antiforgery on every POST, security headers and CSP (R24). The roles are Agent and Admin, as constitution v1.1.0 names them | ✅ | ✅ |
 | II | **Customer-Safe Output** (non-negotiable) | The PDF is built only from `CustomerQuoteDocumentModel`, which has no agent-only fields ([contracts/customer-pdf.md](contracts/customer-pdf.md)). The Outlook draft carries only the PDF. File names contain only the customer name, fuel and date, and the PDF title only our name and the reference. Commission appears only through disclosure placeholders. Placeholder wording can't reach a customer outside Development. "Customer view" renders the results without agent-only data for screen sharing. Reflection and rendered-content tests are required (R18) | ✅ | ✅ |
 | III | **Validate Before Calling Out** | `QuoteInputValidator` and the MPAN, MPRN and postcode validators run on the server before every POWWR call (pricing, `/prompts`, lookup), and again as a guard in the services. Upload rows go through the same rules (R15, R23). POWWR responses are mapped and checked in the adapter (R4, R5) | ✅ | ✅ |
 | IV | **On-Brand and Accessible** | The kit is copied into `wwwroot/cu/` unchanged. `app.css` and `pdf.css` use tokens only, with no hex, `rgb()` or named colours (a test scans the `.css` and `.cshtml`/`.razor` files). Text is navy, and teal only for links and active controls. Savings use marks plus words. Components are listed per screen below, and missing ones are listed as kit gaps rather than restyled. Keyboard and focus ring come from the kit. Layouts are checked at 390, 1024 and 1280 px (quickstart). The older brand guide is ignored | ✅ | ✅ |
@@ -72,14 +72,13 @@ in the meantime. None blocks the build.
 | VIII | **Keep It Simple** | C# and .NET only. Playwright's Chromium is installed with its own PowerShell script, run through `pwsh` from the repo's local .NET tool manifest (R26). Server-rendered Razor Pages, with `app.js` for small progressive enhancements. Triage's layout and conventions, with the four constitution-mandated differences in R1. Packages beyond the named stack are justified below | ✅ | ✅ |
 | IX | **Compliance Wording Is Managed** | Every customer-facing statement comes from versioned admin settings, starting as placeholders that are visibly marked: validity, indicative notice, credit check, commission disclosure, the three microbusiness items, VAT/CCL note, terms text, and the terms URL. Placeholders block PDFs and Outlook drafts outside Development, and approval records the compliance approver's name. Each PDF records the wording versions it used. Changes are audited by an Admin. Company contact details are configuration, not code (R19) | ✅ | ✅ |
 
-**Gate result**: PASS before research. After design, PASS **once the constitution is amended**.
+**Gate result**: PASS before research, and PASS after design against **constitution v1.1.0**.
 
-- **Why it needs amending**: the security and compliance review (spec Clarifications, 2026-10-30)
-  removed the Manager role and manager approval. Principle I and the Technology section still name
-  "Agent, Manager and Admin" roles. Principle I can't be waived, so this isn't recorded as a
-  Complexity Tracking exception.
-- **The fix**: an amendment through `/speckit-constitution` that names the Agent and Admin roles. The
-  amendment changes no security rule: every role is still enforced on the server.
+- **The amendment** (2026-10-31): the security and compliance review (spec Clarifications,
+  2026-10-30) removed the Manager role and manager approval, so `/speckit-constitution` amended the
+  constitution to v1.1.0. Principle I and the Technology section now name the Agent and Admin roles,
+  and Principle V and the required tests no longer mention approvals. No security rule changed:
+  every role is still enforced on the server.
 - **Triage differences**: those in R1 (Razor Pages, Microsoft.Identity.Web, user secrets, SQL Server)
   are what the constitution's own Technology section requires, so they are not deviations.
 
@@ -323,9 +322,9 @@ the Setup phase runs.
 
 ## Risks and follow-ups
 
-- **Constitution amendment**: Principle I and the Technology section still name a Manager role. Amend
-  them with `/speckit-constitution` before `/speckit-tasks`, or `/speckit-analyze` will report the
-  mismatch as CRITICAL. `CLAUDE.md` ("Roles: Agent, Manager, Admin") follows in the same change.
+- **Playbook**: `cu-pricing-tool-speckit-playbook.md` (the owner's document) still mentions
+  managers, approvals and per-role limits in its Step 1, 2, 4 and 6 prompts. Those prompts have
+  already run, so this only matters if they are reused.
 - **Blank limits allow no uplift** (FR-060): the seed data must set every per-fuel and supplier
   maximum. A supplier added later with no maximum is priced at zero uplift until an admin sets one.
 - **POWWR answers** (research open items). The biggest risks are:
@@ -333,8 +332,8 @@ the Setup phase runs.
   - the start date field (Q9);
   - the 9-character top line layout (Q10);
   - whether `Version` matches `PricebookVersion` (new question P-17);
-  - electricity switching detection (new question P-16, **leaves FR-012 partly unmet for
-    electricity until answered**).
+  - electricity switching detection (new question P-16). FR-012 now says the electricity switching
+    warning is added once POWWR names a lookup field; until then only gas has one.
 
   Each one is isolated in a single class or setting, so an answer is a small change. P-16 and P-17
   have been added to `docs/powwr/README.md` as questions 16 and 17.
@@ -351,8 +350,7 @@ the Setup phase runs.
 
 ## Complexity Tracking
 
-No waivable deviations. The Manager-role mismatch is fixed by amending the constitution (see the gate
-result), not by recording an exception here.
+No constitution violations. Nothing to justify.
 
 | Violation | Why Needed | Simpler Alternative Rejected Because |
 |-----------|------------|-------------------------------------|

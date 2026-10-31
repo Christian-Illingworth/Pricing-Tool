@@ -20,8 +20,8 @@ plan, task and line of code in this project.
   tokens MUST NOT be written to logs, audit records, reporting exports or error messages.
 - Only signed-in staff who belong to the approved Microsoft Entra group (currently
   "Pricing Tool Users") in our tenant may use the app. Every page and handler MUST require sign-in
-  by default, and the Agent, Manager and Admin roles MUST be enforced on the server, not only by
-  hiding navigation.
+  by default, and the Agent and Admin roles MUST be enforced on the server, not only by hiding
+  navigation.
 - Any development-only sign-in shortcut MUST work only in the Development environment and MUST NOT
   be reachable in any deployed environment.
 
@@ -79,15 +79,16 @@ our other apps, and every member of staff must be able to use the tool.
 ### V. Auditable
 
 - The app MUST store every quote request (its inputs), the results POWWR returned, the uplifts
-  applied, every approval request and decision, every PDF generated, every Outlook draft created,
-  and every change to admin settings (with the old and new values).
+  applied, every PDF generated, every Outlook draft created, and every change to admin settings
+  (with the old and new values).
 - Each record MUST identify the signed-in person who did it (their Entra identity) and when (UTC).
 - If the audit record cannot be saved, the action MUST fail rather than proceed unrecorded.
 - Audit records MUST NOT be editable or deletable through the app. The only deletion allowed is
   the automated retention policy defined in the specification.
 
 **Rationale:** we must be able to show what a customer was quoted, on what basis, with what
-margin, and who approved it, for complaints, compliance reviews and commission disputes.
+margin and within which uplift limits, and who did each step, for complaints, compliance reviews
+and commission disputes.
 
 ### VI. One Set of Numbers
 
@@ -160,7 +161,7 @@ be able to update it without a code release, and we must be able to prove what e
 
 - **Stack:** ASP.NET Core on the current .NET LTS release with Razor Pages; Entity Framework Core
   with SQL Server (SQL Server Express locally, Azure SQL later); Microsoft Entra ID sign-in through
-  Microsoft.Identity.Web with Agent, Manager and Admin app roles; PDFs rendered from a Razor
+  Microsoft.Identity.Web with Agent and Admin app roles; PDFs rendered from a Razor
   template with Playwright for .NET; Outlook drafts through Microsoft Graph; xUnit for tests.
 - **POWWR:** `docs/powwr/` is the reference for what the UK Pricing and Meter Lookup APIs
   support. Check it before assuming any behaviour.
@@ -183,8 +184,8 @@ be able to update it without a code release, and we must be able to prove what e
   MUST be recorded and justified in the plan's Complexity Tracking table and approved by the
   project owner before work starts.
 - **Required tests:** xUnit unit tests MUST accompany every change to input validation (including
-  MPAN and MPRN rules), the pricing engine, POWWR request and response mapping, uplift limits and
-  approvals, spreadsheet uploads, customer-safe output and reporting records. These tests are
+  MPAN and MPRN rules), the pricing engine, POWWR request and response mapping, uplift limits,
+  spreadsheet uploads, customer-safe output and reporting records. These tests are
   required regardless of whether a template marks tests as optional.
 - **Branches:** each feature has its own branch. Nothing is committed or pushed directly to
   `main`; changes reach `main` only through a merged pull request.
@@ -212,4 +213,4 @@ be able to update it without a code release, and we must be able to prove what e
 - **Runtime guidance:** `CLAUDE.md` holds day-to-day development guidance and `DESIGN.md` holds
   the UI rules. Both MUST stay consistent with this constitution.
 
-**Version**: 1.0.0 | **Ratified**: 2026-10-30 | **Last Amended**: 2026-10-30
+**Version**: 1.1.0 | **Ratified**: 2026-10-30 | **Last Amended**: 2026-10-31

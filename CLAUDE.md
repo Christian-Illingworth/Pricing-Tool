@@ -1,7 +1,7 @@
 # CLAUDE.md: CU Pricing Tool
 
 ## What this is
-An internal web app for Consultiv Utilities' sales agents (we are a UK energy broker). An agent enters a business customer's electricity or gas supply details, gets live prices from the POWWR API, compares suppliers and terms with our uplift applied, and produces a branded PDF quote, which they can open in a blank Outlook email. Roles: Agent, Manager, Admin.
+An internal web app for Consultiv Utilities' sales agents (we are a UK energy broker). An agent enters a business customer's electricity or gas supply details, gets live prices from the POWWR API, compares suppliers and terms with our uplift applied, and produces a branded PDF quote, which they can open in a blank Outlook email. Roles: Agent and Admin.
 
 ## Where things are
 - `.specify/memory/constitution.md`: the project's non-negotiable rules. Read it before planning or coding. It overrides anything else in this file.
@@ -48,7 +48,7 @@ If the merge has conflicts, stop and show me. Don't guess. Never force-push, reb
 ## Tech stack (`plan.md` has the details)
 - ASP.NET Core on the current .NET LTS release, with server-rendered Razor Pages. No Bootstrap, jQuery, Tailwind or any other CSS framework.
 - Entity Framework Core with SQL Server: SQL Server Express locally (`.\SQLEXPRESS`), Azure SQL later.
-- Microsoft Entra ID sign-in (Microsoft.Identity.Web), with Agent, Manager and Admin app roles.
+- Microsoft Entra ID sign-in (Microsoft.Identity.Web), with Agent and Admin app roles.
 - PDFs rendered from a Razor template with Playwright for .NET.
 - Outlook drafts created through Microsoft Graph (delegated Mail.ReadWrite).
 - xUnit for tests.
@@ -76,7 +76,7 @@ dotnet ef database update --project <data project>
 - **Reporting:** every quote event goes through the reporting outbox, and reporting must never slow down or block an agent.
 
 ## Testing
-- Add or update unit tests with every change to validation, the pricing engine, uplift limits and approvals, spreadsheet uploads or reporting records.
+- Add or update unit tests with every change to validation, the pricing engine, uplift limits, spreadsheet uploads or reporting records.
 - Tests use the mock POWWR adapter and made-up data, never real customer data.
 
 ## Domain terms

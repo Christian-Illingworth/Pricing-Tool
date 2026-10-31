@@ -476,7 +476,10 @@ totals, filters and CSV export, and the records in the reporting store.
   the lookup and which the agent entered or changed.
 - **FR-012**: The tool MUST warn the agent, and save the warning with the quote, when the meter is
   domestic, de-energised, already switching to another supplier, or has an active Green Deal plan.
-  For a domestic meter, the agent MUST confirm before pricing.
+  For a domestic meter, the agent MUST confirm before pricing. A switch already in progress is
+  warned about whenever the meter lookup shows it. For gas, this is `incomingSupplier`. For
+  electricity, the lookup has no documented field yet, so that warning is added once POWWR names one
+  (`docs/powwr/README.md` question 16). Until then, no electricity switching warning is shown.
 
 **Quote type**
 

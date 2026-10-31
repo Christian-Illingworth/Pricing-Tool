@@ -296,7 +296,7 @@ adapters with mocks, **the pricing engine**, and the reporting recorder. Every u
   - `profileClass` "03" → 3 and `meterTimeswitchClass` "801" → 801; a non-numeric value → null plus a warning;
   - redacted MPANs are kept as hints only;
   - `amrIndicator` "Y" → smart suggested;
-  - `isIGT` → `Igt`; `incomingSupplier` → `SwitchInProgress`, naming the supplier;
+  - `isIGT` → `Igt`; `incomingSupplier` → `SwitchInProgress`, naming the supplier (gas only; no electricity field exists until POWWR answers question 16, per FR-012);
   - `isDomesticConsumer` → `Domestic`; `energisationStatus` "D" → `DeEnergised`; `greenDealStatus` "Active" → `GreenDealActive`;
   - an unmatched supplier → `SupplierNotMapped`;
   - an RFC 7807 body → `Rejected`, with a safe summary.
